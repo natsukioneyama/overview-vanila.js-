@@ -1,0 +1,419 @@
+/* ============ Base ============ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+/* overview ベース */
+:root {
+  --bar-h: 72px;
+  --gutter: clamp(3px, 2vw, 5px);
+}
+
+body {
+  font-family: system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  color: #111;
+  background: #d20606; /* overview と同じ赤 */
+  overflow-x: hidden;
+}
+
+/* ============ Top bar ============ */
+.topbar {
+  position: relative;
+  top: 0;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px var(--gutter);
+  min-height: var(--bar-h);
+}
+
+.brand {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  position: fixed;
+}
+
+.brand .artist {
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.brand .role {
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: .05em;
+}
+
+.toplinks {
+  position: fixed;
+  top: 28px;
+  right: 10px;
+}
+
+.toplinks a {
+  font-size: 12px;
+  font-weight: 600;
+  color: inherit;
+  text-decoration: none;
+}
+
+.toplinks a:hover {
+  opacity: .8;
+}
+
+/* ============ Layout wrapper ============ */
+.page {
+  padding: 0 var(--gutter) var(--gutter);
+}
+
+/* ============ Grid (justified-layout 用) ============ */
+/* 高さは JS（justified-layout）で更新 */
+#grid {
+  position: relative;
+  width: min(1200px, 100vw - 2 * var(--gutter));
+  margin: 8px auto 48px;
+}
+
+/* ============ Items (images & videos) ============ */
+/* 各アイテム（画像・動画共通） */
+.jl-item {
+  position: absolute;
+  margin: 0;
+  overflow: hidden;
+}
+
+/* 中身（画像・動画）はボックスにフィット */
+.jl-item img,
+.jl-item video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* data-w/data-h が実際の比率と合っていればほぼトリミングなし */
+}
+
+/* ============ Fullscreen for video ============ */
+/* フルスクリーン時は必ずオリジナル比率を守る */
+.jl-item.is-video video:fullscreen,
+.jl-item.is-video video:-webkit-full-screen {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* レターボックスでもトリミングしない */
+  background: #000;
+}
+
+/* ============ Fullscreen button ============ */
+.fs-btn {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  width: 22px;
+  height: 22px;
+  border: none;
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: 4px;
+  cursor: pointer;
+  outline: none;
+
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.fs-btn::before {
+  content: "⤢"; /* fullscreen アイコン */
+  color: #fff;
+  font-size: 14px;
+  line-height: 22px;
+  display: block;
+  text-align: center;
+  pointer-events: none;
+}
+
+/* マウスホバー時だけ表示（PC） */
+.jl-item.is-video:hover .fs-btn {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* タッチデバイスでは常に表示（hover が無い環境用） */
+@media (hover: none) {
+  .fs-btn {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============ Small screen tweaks ============ */
+@media (max-width: 480px) {
+  .brand .artist {
+    font-size: 16px;
+  }
+}
+
+
+
+
+
+
+
+
+
+/* ========== Lightbox: gm (gallery modal) ========== */
+
+.gm[aria-hidden="true"] {
+  display: none;
+}
+
+.gm {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+}
+
+.gm-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: #d20606; /* overview と同じ赤 */
+}
+
+/* hidden が付いたら確実に消す */
+.gm-frame img[hidden],
+.gm-video-wrap[hidden] {
+  display: none !important;
+}
+
+
+
+/* Frame (画像・動画の枠) */
+.gm-frame {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  padding: 40px 20px 80px; /* 上・左右・下の余白 */
+  box-sizing: border-box;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 画像 */
+.gm-frame img {
+  flex: 0 0 auto;
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* 動画 wrapper */
+/* 中身の video の幅にピッタリ縮むようにする */
+.gm-video-wrap {
+  position: relative;         /* sv-controls の基準 */
+  flex: 0 0 auto;
+  display: inline-flex;       /* ★ 幅 = 子要素（video）の幅 */
+  align-items: center;
+  justify-content: center;
+}
+
+/* 動画本体 */
+.gm-video-wrap video {
+  display: block;
+  max-width: 90vw;
+  max-height: 90vh;
+  object-fit: contain;
+}
+
+
+
+
+
+
+
+/* ===== caption & text ===== */
+.gm-caption {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  color: #000000;
+  pointer-events: none;
+  text-align: left;
+}
+
+.gm-ttl {
+  margin: 0;
+  font-weight: 400;
+  font-size: .8rem;
+}
+
+.gm-sub {
+  margin: 0;
+  font-weight: 400;
+  font-size: .8rem;
+}
+
+.gm-name .gm-main {
+  font-weight: 700;
+  font-size: .9rem;
+  letter-spacing: 0.05em;
+}
+
+.gm-name .gm-subtitle {
+  font-weight: 700;
+  font-size: .7rem;
+  letter-spacing: 0.04em;
+}
+
+/* counter (右下) */
+.gm-counter {
+  position: absolute;
+  right: 15px;
+  bottom: 30px;
+  color: #000000;
+  font-weight: 400;
+  font-size: .8rem;
+  letter-spacing: .04em;
+}
+
+/* close button */
+.gm-close {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  border: 0;
+  background: transparent;
+  color: #000000;
+  font-size: .8rem;
+  font-weight: 400;
+  z-index: 10;
+}
+
+/* click zones */
+.gm-hit {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50vw;
+  height: 100vh;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.gm-prev { left: 0; }
+.gm-next { right: 0; }
+
+/* prevent iOS tap highlight */
+.gm-hit,
+.gm-close,
+.gm-backdrop {
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* modal open: disable scroll */
+.gm[aria-hidden="false"] {
+  position: fixed;
+  inset: 0;
+  overflow: hidden !important;
+  overscroll-behavior: contain !important;
+  touch-action: none !important;
+  -webkit-overflow-scrolling: auto !important;
+}
+
+.gm-frame,
+.gm-caption {
+  overscroll-behavior: contain !important;
+  touch-action: none !important;
+  -webkit-overflow-scrolling: auto !important;
+}
+
+
+/* ====== Custom video controls (sv) ====== */
+
+/* 動画のラッパー */
+.gm-video-wrap {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+/* コントロールは常に表示（テスト用） */
+.sv-controls {
+  margin-top: 8px;           /* 動画の下に少し余白 */
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+  z-index: 20;
+}
+
+/* いまは is-visible は使わないが、将来用に残しておく */
+.sv-controls.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* プログレスバー */
+.sv-progress {
+  position: relative;
+  height: 6px;
+  background: rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.sv-progress__bar {
+  position: absolute;
+  inset: 0;
+  transform-origin: left center;
+  transform: scaleX(0);
+  background: #000;
+}
+
+/* ボタン行 */
+.sv-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* ボタン共通 */
+.sv-btn {
+  border: none;
+  background: transparent;
+  color: #000;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  padding: 4px 0;
+  cursor: pointer;
+}
+
+
+/* モバイルでも少し余裕を */
+@media (max-width: 480px) {
+  .sv-controls {
+    padding: 8px 12px;
+  }
+}
