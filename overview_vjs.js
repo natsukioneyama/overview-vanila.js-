@@ -576,7 +576,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-
 // ==== gm video controls: progress + PLAY/FULL ====
 document.addEventListener('DOMContentLoaded', () => {
   const gm = document.getElementById('gm');
@@ -588,70 +587,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (!videoWrap || !video || !controls) return;
 
-  const progressTrack = controls.querySelector('.sv-progress');
-  const progressBar   = controls.querySelector('.sv-progress__bar');
-  const btnPlay       = controls.querySelector('.sv-btn--play');
-  const btnFs         = controls.querySelector('.sv-btn--fs');
+  const progTrack = controls.querySelector('.sv-progress');
+  const progBar   = controls.querySelector('.sv-progress__bar');
+  const btnPlay   = controls.querySelector('.sv-btn--play');
+  const btnFs     = controls.querySelector('.sv-btn--fs');
 
-  // ---- タッチ端末判定（iPhone / Android 含む）----
-  const isTouchDevice =
-    (window.matchMedia &&
-      window.matchMedia('(hover: none) and (pointer: coarse)').matches) ||
-    ('ontouchstart' in window) ||
-    (navigator.maxTouchPoints > 0);
-
-  let hideControlsTimer = null;
-
-  // ---- コントロール表示（タップで表示 → 数秒後に消える）----
-  function showControls() {
-    if (!isTouchDevice) return;   // PC では常時表示のままにしたい場合
-
-    controls.classList.add('is-visible');
-
-    if (hideControlsTimer) {
-      clearTimeout(hideControlsTimer);
-    }
-    hideControlsTimer = setTimeout(() => {
-      controls.classList.remove('is-visible');
-      hideControlsTimer = null;
-    }, 3000); // 3秒後にフェードアウト
-  }
-
-  // ---- 再生ボタンの表示を同期 ----
-  function syncPlayButton() {
-    if (!btnPlay) return;
-    // 一時停止中 → PLAY / 再生中 → PAUSE
-    btnPlay.textContent = video.paused ? 'PLAY' : 'PAUSE';
-  }
-
-  // ---- プログレスバー更新 ----
-  function updateProgress() {
-    if (!progressBar || !video.duration || !isFinite(video.duration)) {
-      if (progressBar) {
-        progressBar.style.transform = 'scaleX(0)';
-      }
-      return;
-    }
-    const ratio = video.currentTime / video.duration;
-    progressBar.style.transform = `scaleX(${ratio})`;
-  }
-
-  video.addEventListener('timeupdate', updateProgress);
-  video.addEventListener('loadedmetadata', updateProgress);
-
-  video.addEventListener('play', () => {
-    syncPlayButton();
-    showControls(); // 再生開始時にいちど表示
-  });
-
-  video.addEventListener('pause', syncPlayButton);
-
-  // ---- プログレスバーでシーク（ドラッグ対応） ----
-  if (progressTrack) {
+  // 進捗バーをクリック / ドラッグしてシーク（simple-viewer と同じロジック）
+  if (progTrack && video) {
     let isSeeking = false;
 
     const seekFromClientX = (clientX) => {
-      const rect = progressTrack.getBoundingClientRect();
+      const rect = progTrack.getBoundingClientRect();
       if (!rect.width || !video.duration) return;
 
       let ratio = (clientX - rect.left) / rect.width;
@@ -667,46 +613,52 @@ document.addEventListener('DOMContentLoaded', () => {
       seekFromClientX(e.clientX);
     };
 
-    const onPointerUp = () => {
+    const onPointerUp = (e) => {
       if (!isSeeking) return;
       isSeeking = false;
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
     };
 
-    progressTrack.addEventListener('pointerdown', (e) => {
+    progTrack.addEventListener('pointerdown', (e) => {
       e.preventDefault();
-      e.stopPropagation(); // ナビボタンにクリックが伝わらないように
+      e.stopPropagation(); // 背景クリック扱いにしない
 
       isSeeking = true;
       seekFromClientX(e.clientX);
-
-      // シーク操作を始めたらコントロールを表示＆タイマー延長
-      showControls();
 
       window.addEventListener('pointermove', onPointerMove);
       window.addEventListener('pointerup', onPointerUp);
     });
   }
 
-  // ---- PLAY / PAUSE ボタン ----
-  if (btnPlay) {
+  // プログレスバー更新（simple-viewer と同じく width を変える）
+  if (video && progBar) {
+    video.addEventListener('timeupdate', () => {
+      if (!video.duration) return;
+      const ratio = video.currentTime / video.duration;
+      progBar.style.width = `${ratio * 100}%`;
+    });
+  }
+
+  // 再生 / 一時停止
+  if (btnPlay && video) {
     btnPlay.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
 
       if (video.paused) {
         video.play().catch(() => {});
+        btnPlay.textContent = 'PAUSE';
       } else {
         video.pause();
+        btnPlay.textContent = 'PLAY';
       }
-      syncPlayButton();
-      showControls(); // ボタンを触ったら 3秒見えるように
     });
   }
 
-  // ---- FULL ボタン ----
-  if (btnFs) {
+  // フルスクリーン
+  if (btnFs && video) {
     btnFs.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -717,47 +669,49 @@ document.addEventListener('DOMContentLoaded', () => {
         // iPhone Safari 向け
         video.webkitEnterFullscreen();
       }
-
-      showControls();
     });
   }
 
-  // ---- タッチ端末：動画エリアタップでコントロール表示 ----
-  if (isTouchDevice && videoWrap) {
-    // 動画＋その周囲をタップ / タッチした瞬間にコントロール表示
-    const handleTap = (e) => {
-      e.stopPropagation();
+  // iPhone 等：タップでコントロール表示（simple-viewer と同じ思想）
+  let hideControlsTimer = null;
+
+  function showControls() {
+    if (!controls) return;
+
+    controls.classList.add('is-visible');
+    if (hideControlsTimer) clearTimeout(hideControlsTimer);
+
+    hideControlsTimer = setTimeout(() => {
+      controls.classList.remove('is-visible');
+    }, 3000);
+  }
+
+  const isTouch =
+    (window.matchMedia &&
+      window.matchMedia('(hover: none) and (pointer: coarse)').matches) ||
+    ('ontouchstart' in window) ||
+    (navigator.maxTouchPoints > 0);
+
+  if (isTouch && video) {
+    // 動画タップで表示
+    video.addEventListener('click', () => {
       showControls();
-    };
+    });
 
-    video.addEventListener('touchstart', handleTap, { passive: true });
-    video.addEventListener('click', handleTap);
-
-    // iOS Safari で click が拾われないケースがあるので
-    // pointerdown / touchstart を両方仕込む
-    videoWrap.addEventListener('pointerdown', handleTap);
-    videoWrap.addEventListener('touchstart', handleTap);
-
-    // コントロール上を触っている間はタイマーを止める
+    // コントロール上で触っている間はタイマー停止
     controls.addEventListener('pointerdown', () => {
       if (hideControlsTimer) {
         clearTimeout(hideControlsTimer);
         hideControlsTimer = null;
       }
     });
-
-    // 指を離したら、また 3秒カウント
     controls.addEventListener('pointerup', () => {
       showControls();
     });
   }
 
-  // 念のためボタン系は pointer-events を強制 ON
-  Array.from(controls.querySelectorAll('button')).forEach((btn) => {
-    btn.style.pointerEvents = 'auto';
-  });
-
-  // 初期状態の同期
-  syncPlayButton();
-  updateProgress();
+  // 初期のボタン表示（動画が開いた直後の状態）
+  if (btnPlay && video) {
+    btnPlay.textContent = video.paused ? 'PLAY' : 'PAUSE';
+  }
 });

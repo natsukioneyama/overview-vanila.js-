@@ -184,7 +184,7 @@ body.jl-ready #grid {
   content: "";
   position: absolute;
   inset: 0;
-  background: rgba(97, 39, 255, 0.763);
+  background: rgba(255, 39, 179, 0.763);
   pointer-events: none;
   z-index: 1;
 }
@@ -588,12 +588,11 @@ body.jl-ready #grid {
 }
 
 .sv-progress__bar {
-  position: absolute;
-  inset: 0;
-  transform-origin: left center;
-  transform: scaleX(0);
-  background: #000;
+  width: 0;         /* 0% → 100% に伸びる */
+  height: 100%;
+  background: #fff; /* 白のほうが見える */
 }
+
 
 /* ボタン行 */
 .sv-nav {
@@ -647,10 +646,6 @@ body.jl-ready #grid {
     pointer-events: auto;
   }
 
-  /* ★ 追加：video のタップを全部ラッパーに流す */
-  .gm-video-wrap video {
-    pointer-events: none;
-  }
 
   /* タッチ端末では :hover ルールは殺しておく */
   .gm-video-wrap:hover .sv-controls {
