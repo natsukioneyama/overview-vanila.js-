@@ -36,6 +36,9 @@
 
     // ==== グループ & キャプション生成（data-title 単位） ====
 
+
+      // ==== グループ & キャプション生成（data-title 単位） ====
+
   // key = title + line1 でグループ化
   const groups = new Map();
 
@@ -44,18 +47,17 @@
     const meta = el.querySelector('.lb-data, img');
     if (!meta) return;
 
-  let title = meta.dataset.title || '';
-  const line1 = meta.dataset.line1 || '';
-  const line2 = meta.dataset.line2 || '';
+    let title = meta.dataset.title || '';
+    const line1 = meta.dataset.line1 || '';
+    const line2 = meta.dataset.line2 || '';
 
-  // ★ title が空の場合、line1 を仮タイトルとして使う
-  if (!title && line1) {
-    title = line1;
-  }
+    // title が空の場合、line1 を仮タイトルとして使う
+    if (!title && line1) {
+      title = line1;
+    }
 
-
-  // ★ 両方空ならスキップ
-  if (!title) return;
+    // 両方空ならスキップ
+    if (!title) return;
 
     const key = `${title}|||${line1}`;
 
@@ -83,23 +85,12 @@
     const cap = document.createElement('figcaption');
     cap.className = 'ov-cap';
 
-      // グループの先頭にだけ .ov-cap を付与
-  groups.forEach((group) => {
-    if (!group.members.length) return;
-
-    const headEl = group.members[0];
-    headEl.dataset.head = '1';
-
-    const cap = document.createElement('figcaption');
-    cap.className = 'ov-cap';
-
-    // ★ title と line1 の関係で表示を分ける
+    // title と line1 の関係で表示を分ける
     if (group.title === group.line1) {
       // data-title="" だった → line1 がタイトル扱い
       const b = document.createElement('b');
       b.textContent = group.line1;
       cap.appendChild(b);
-
     } else {
       // 通常ケース：title がメイン、line1 がサブ
       const b = document.createElement('b');
@@ -122,15 +113,10 @@
     headEl.appendChild(cap);
   });
 
+ 
 
-    if (group.line2) {
-      const i = document.createElement('i');
-      i.textContent = group.line2;
-      cap.appendChild(i);
-    }
 
-    headEl.appendChild(cap);
-  });
+
 
   // ==== グループのハイライト制御（ホバー & タップ共通） ====
 
