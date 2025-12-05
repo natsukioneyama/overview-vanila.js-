@@ -1026,3 +1026,81 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+// ==== gm Lightbox 動画：タップでコントロール表示 → 数秒後に自動フェードアウト ====
+(function () {
+  const gm = document.querySelector('.gm');
+  if (!gm) return;
+
+  const isTouch =
+    ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+
+  // PC では既存の hover で十分なので、タッチ端末だけ処理
+  if (!isTouch) return;
+
+  let hideTimer = null;
+
+  function showControlsOnce(wrap) {
+    if (!wrap) return;
+    const ctrls = wrap.querySelector('.sv-controls');
+    if (!ctrls) return;
+
+    // 表示
+    ctrls.classList.add('is-visible');
+
+    // 既存タイマーがあればリセット
+    if (hideTimer) {
+      clearTimeout(hideTimer);
+      hideTimer = null;
+    }
+
+    // 3 秒後に自動で非表示
+    hideTimer = setTimeout(() => {
+      ctrls.classList.remove('is-visible');
+      hideTimer = null;
+    }, 3000);
+  }
+
+  // 動画タップでコントロール表示（次 / 前 ナビには触らせない）
+  gm.addEventListener(
+    'click',
+    (e) => {
+      const videoEl = e.target.closest('.gm-video-wrap video');
+      if (!videoEl) return;
+
+      // 左右の gm-hit にイベントが行かないようにする
+      e.stopPropagation();
+
+      const wrap = videoEl.closest('.gm-video-wrap');
+      showControlsOnce(wrap);
+    },
+    true // capture: gm-hit より先に処理する
+  );
+
+  // コントロールを操作している間はタイマー停止
+  gm.addEventListener('pointerdown', (e) => {
+    if (!e.target.closest('.gm-video-wrap .sv-controls')) return;
+    if (hideTimer) {
+      clearTimeout(hideTimer);
+      hideTimer = null;
+    }
+  });
+
+  // 指を離したら、また 3 秒カウントを開始
+  gm.addEventListener('pointerup', (e) => {
+    const wrap = e.target.closest('.gm-video-wrap');
+    if (!wrap) return;
+    showControlsOnce(wrap);
+  });
+
+  // Lightbox を閉じたときに後始末（任意）
+  gm.addEventListener('transitionend', () => {
+    if (gm.getAttribute('aria-hidden') === 'true') {
+      const ctrls = gm.querySelector('.gm-video-wrap .sv-controls');
+      if (ctrls) ctrls.classList.remove('is-visible');
+      if (hideTimer) {
+        clearTimeout(hideTimer);
+        hideTimer = null;
+      }
+    }
+  });
+})();
