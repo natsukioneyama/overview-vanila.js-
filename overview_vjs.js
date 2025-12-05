@@ -682,6 +682,12 @@ document.addEventListener('DOMContentLoaded', () => {
     ('ontouchstart' in window) ||
     (navigator.maxTouchPoints > 0);
 
+    // PC のときは is-visible を常に削除して hover のみにする
+if (!isTouch) {
+  controls.classList.remove('is-visible');
+}
+
+
   let hideControlsTimer = null;
 
   function showControlsOnce() {
