@@ -673,46 +673,29 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // ---- タッチ端末判定 ----
+
+
+    // ---- iPhone 等: タップでコントロール表示 ----
   const isTouch =
-    (window.matchMedia &&
-      window.matchMedia('(hover: none) and (pointer: coarse)').matches) ||
     ('ontouchstart' in window) ||
-    (navigator.maxTouchPoints > 0);
+    (navigator.maxTouchPoints && navigator.maxTouchPoints > 0);
 
-  // PC：is-visible は使わず、hover のみ
-  if (!isTouch) {
+  if (isTouch) {
+    // ★ iPhone / Android 用：動画をタップしたらフェード表示（トグル）
+    const handleTap = (e) => {
+      e.stopPropagation();
+      // is-visible を付けたり消したりするだけ
+      controls.classList.toggle('is-visible');
+    };
+
+    // 動画本体だけをタップターゲットにする
+    video.addEventListener('click', handleTap);
+    video.addEventListener('touchstart', handleTap, { passive: true });
+
+  } else {
+    // ★ PC：is-visible は使わず、hover だけに任せる
     controls.classList.remove('is-visible');
-    return;
   }
 
-  // ここから iPhone / Android 用：表示されたら一定時間後にフェードアウト
-  let hideControlsTimer = null;
+}); // ← gm video controls 用 DOMContentLoaded の閉じ
 
-  function showControlsFor(ms = 1500) {
-    controls.classList.add('is-visible');
-
-    if (hideControlsTimer) {
-      clearTimeout(hideControlsTimer);
-    }
-
-    hideControlsTimer = setTimeout(() => {
-      controls.classList.remove('is-visible');
-      hideControlsTimer = null;
-    }, ms);
-  }
-
-  // 動画が再生された瞬間に一度だけ表示 → 1.5 秒後に自動で消える
-  video.addEventListener('play', () => {
-    showControlsFor(1500);
-  });
-
-  // 動画本体をタップしたときに再度表示 → また 1.5 秒後に自動で消える
-  const handleTap = (e) => {
-    e.stopPropagation();
-    showControlsFor(1500);
-  };
-
-  video.addEventListener('pointerdown', handleTap);
-  video.addEventListener('touchstart', handleTap, { passive: true });
-});
