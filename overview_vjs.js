@@ -695,8 +695,14 @@ document.addEventListener('DOMContentLoaded', () => {
   if (isTouch && video) {
     // 動画タップで表示
     video.addEventListener('click', () => {
-      showControls();
-    });
+  videoWrap.classList.add('show-controls');
+
+  clearTimeout(hideControlsTimer);
+  hideControlsTimer = setTimeout(() => {
+    videoWrap.classList.remove('show-controls');
+  }, 3000);
+});
+
 
     // コントロール上で触っている間はタイマー停止
     controls.addEventListener('pointerdown', () => {
