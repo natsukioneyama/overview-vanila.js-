@@ -184,7 +184,7 @@ body.jl-ready #grid {
   content: "";
   position: absolute;
   inset: 0;
-  background: rgba(39, 255, 208, 0.763);
+  background: rgba(255, 255, 255, 0.763);
   pointer-events: none;
   z-index: 1;
 }
@@ -507,22 +507,17 @@ body.jl-ready #grid {
 
 
 
-
-
 /* ====== Custom video controls (sv) ====== */
 
 /* 動画のラッパー */
 .gm-video-wrap {
   position: relative;         /* sv-controls の基準 */
   flex: 0 0 auto;
-  display: inline-flex;       /* ★ 幅 = 子要素（video）の幅 */
+  display: inline-flex;       /* 幅 = 子要素（video）の幅 */
   align-items: center;
   justify-content: center;
+  z-index: 20;
 
-  z-index: 20;                /* ★ 追加：動画 & コントロールをヒットゾーンより上に */
-}
-
-.gm-video-wrap {
   opacity: 0;
   transition: opacity .35s ease;
 }
@@ -530,26 +525,21 @@ body.jl-ready #grid {
 .gm-video-wrap.is-ready {
   opacity: 1;
 }
-@media (hover: none) and (pointer: coarse) {
-  .gm-video-wrap .sv-controls button {
-    pointer-events: auto;
-  }
-}
 
-
+/* コントロール本体 */
 .sv-controls {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 0;            /* ← 動画の中 下寄せ */
+  bottom: 0;            /* 動画の下辺に沿わせる */
   padding: 12px 14px;
-  
+
   display: flex;
   flex-direction: column;
   gap: 6px;
 
-  opacity: 0;           /* ★ 追加：初期状態では非表示 */
-  pointer-events: none; /* 透明の間はクリック不可にする */
+  opacity: 0;           /* 初期は非表示 */
+  pointer-events: none; /* 非表示中はクリック不可 */
   transition: opacity .25s ease;
   z-index: 10;
 
@@ -557,24 +547,15 @@ body.jl-ready #grid {
   border-radius: 0 0 6px 6px;
 }
 
-
 /* PC：ホバーで表示 */
 .gm-video-wrap:hover .sv-controls {
   opacity: 1;
   pointer-events: auto;
 }
 
-/* スマホ：タップで .show-controls クラスを付けて表示（JS が付ける） */
-.gm-video-wrap.show-controls .sv-controls {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-
-/* いまは is-visible は使わないが、将来用に残しておく */
+/* JS で付与するクラス */
 .sv-controls.is-visible {
   opacity: 1;
-  transform: translateY(0);
   pointer-events: auto;
 }
 
@@ -590,9 +571,8 @@ body.jl-ready #grid {
 .sv-progress__bar {
   width: 0;         /* 0% → 100% に伸びる */
   height: 100%;
-  background: #fff; /* 白のほうが見える */
+  background: #fff; /* 白の方が見やすい */
 }
-
 
 /* ボタン行 */
 .sv-nav {
@@ -605,13 +585,12 @@ body.jl-ready #grid {
 .sv-btn {
   border: none;
   background: transparent;
-  color: #000;
+  color: #fff;          /* 白字にする */
   font-size: 11px;
   letter-spacing: 0.06em;
   padding: 4px 0;
   cursor: pointer;
 }
-
 
 /* モバイルでも少し余裕を */
 @media (max-width: 480px) {
@@ -620,20 +599,7 @@ body.jl-ready #grid {
   }
 }
 
-@media (hover: none) and (pointer: coarse) {
-  #simple-viewer .sv-video__controls {
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity .35s ease;
-  }
-
-  #simple-viewer .sv-video__controls.is-visible {
-    opacity: 1;
-    pointer-events: auto;
-  }
-}
-
-
+/* iPhone 等：初期は非表示、.is-visible で表示 */
 @media (hover: none) and (pointer: coarse) {
   .gm-video-wrap .sv-controls {
     opacity: 0;
@@ -646,11 +612,10 @@ body.jl-ready #grid {
     pointer-events: auto;
   }
 
-
-  /* タッチ端末では :hover ルールは殺しておく */
+  /* 必要なら :hover を殺したい場合はコメント解除
   .gm-video-wrap:hover .sv-controls {
     opacity: 0;
     pointer-events: none;
   }
+  */
 }
-

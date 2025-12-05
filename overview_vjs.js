@@ -575,7 +575,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-
 // ==== gm video controls: progress + PLAY/FULL ====
 document.addEventListener('DOMContentLoaded', () => {
   const gm = document.getElementById('gm');
@@ -592,7 +591,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnPlay   = controls.querySelector('.sv-btn--play');
   const btnFs     = controls.querySelector('.sv-btn--fs');
 
-  // 進捗バーをクリック / ドラッグしてシーク（simple-viewer と同じロジック）
+  // ---- プログレスバーでシーク ----
   if (progTrack && video) {
     let isSeeking = false;
 
@@ -613,7 +612,7 @@ document.addEventListener('DOMContentLoaded', () => {
       seekFromClientX(e.clientX);
     };
 
-    const onPointerUp = (e) => {
+    const onPointerUp = () => {
       if (!isSeeking) return;
       isSeeking = false;
       window.removeEventListener('pointermove', onPointerMove);
@@ -622,7 +621,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     progTrack.addEventListener('pointerdown', (e) => {
       e.preventDefault();
-      e.stopPropagation(); // 背景クリック扱いにしない
+      e.stopPropagation();
 
       isSeeking = true;
       seekFromClientX(e.clientX);
@@ -632,16 +631,20 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // プログレスバー更新（simple-viewer と同じく width を変える）
+  // ---- プログレスバー更新 ----
   if (video && progBar) {
     video.addEventListener('timeupdate', () => {
       if (!video.duration) return;
       const ratio = video.currentTime / video.duration;
       progBar.style.width = `${ratio * 100}%`;
     });
+
+    video.addEventListener('loadedmetadata', () => {
+      progBar.style.width = '0%';
+    });
   }
 
-  // 再生 / 一時停止
+  // ---- 再生 / 一時停止 ----
   if (btnPlay && video) {
     btnPlay.addEventListener('click', (e) => {
       e.preventDefault();
@@ -657,7 +660,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // フルスクリーン
+  // ---- フルスクリーン ----
   if (btnFs && video) {
     btnFs.addEventListener('click', (e) => {
       e.preventDefault();
@@ -672,37 +675,36 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // iPhone 等：タップでコントロール表示（simple-viewer と同じ思想）
-  let hideControlsTimer = null;
-
-  function showControls() {
-    if (!controls) return;
-
-    controls.classList.add('is-visible');
-    if (hideControlsTimer) clearTimeout(hideControlsTimer);
-
-    hideControlsTimer = setTimeout(() => {
-      controls.classList.remove('is-visible');
-    }, 3000);
-  }
-
+  // ---- iPhone 等: タップでコントロール表示 ----
   const isTouch =
     (window.matchMedia &&
       window.matchMedia('(hover: none) and (pointer: coarse)').matches) ||
     ('ontouchstart' in window) ||
     (navigator.maxTouchPoints > 0);
 
-  if (isTouch && video) {
-    // 動画タップで表示
-    video.addEventListener('click', () => {
-  videoWrap.classList.add('show-controls');
+  let hideControlsTimer = null;
 
-  clearTimeout(hideControlsTimer);
-  hideControlsTimer = setTimeout(() => {
-    videoWrap.classList.remove('show-controls');
-  }, 3000);
-});
+  function showControlsOnce() {
+    controls.classList.add('is-visible');
+    if (hideControlsTimer) {
+      clearTimeout(hideControlsTimer);
+    }
+    hideControlsTimer = setTimeout(() => {
+      controls.classList.remove('is-visible');
+      hideControlsTimer = null;
+    }, 3000);
+  }
 
+  if (isTouch) {
+    const handleTap = (e) => {
+      e.stopPropagation();
+      showControlsOnce();
+    };
+
+    // 動画 or ラッパーをタップすると表示
+    video.addEventListener('click', handleTap);
+    videoWrap.addEventListener('pointerdown', handleTap);
+    videoWrap.addEventListener('touchstart', handleTap, { passive: true });
 
     // コントロール上で触っている間はタイマー停止
     controls.addEventListener('pointerdown', () => {
@@ -712,12 +714,13 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
     controls.addEventListener('pointerup', () => {
-      showControls();
+      showControlsOnce();
     });
   }
 
-  // 初期のボタン表示（動画が開いた直後の状態）
-  if (btnPlay && video) {
-    btnPlay.textContent = video.paused ? 'PLAY' : 'PAUSE';
-  }
+  // ---- 初期状態 ----
+  // 動画再生開始時にも一度だけ表示（PCでも見えるように）
+  video.addEventListener('play', () => {
+    controls.classList.add('is-visible');
+  });
 });
