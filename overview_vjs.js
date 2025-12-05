@@ -34,10 +34,20 @@
     };
   });
 
-    // ==== グループ & キャプション生成（data-title 単位） ====
 
 
-      // ==== グループ & キャプション生成（data-title 単位） ====
+
+
+
+
+
+
+
+
+
+
+
+  // ==== グループ & キャプション生成（data-title 単位） ====
 
   // key = title + line1 でグループ化
   const groups = new Map();
@@ -112,12 +122,6 @@
 
     headEl.appendChild(cap);
   });
-
- 
-
-
-
-
   // ==== グループのハイライト制御（ホバー & タップ共通） ====
 
   function clearGroupHighlight() {
@@ -262,25 +266,6 @@
 /* ========== Lightbox (gm) ========== */
 document.addEventListener('DOMContentLoaded', () => {
 
-  // ==== 画面幅に応じた rowHeight を返す ====
-  function getRowHeight() {
-    const w = window.innerWidth;
-    if (w <= 480) {
-      return 130;      // iPhone 幅
-    } else if (w <= 768) {
-      return 140;      // 小さめタブレット
-    } else if (w <= 1200) {
-      return 150;      // 中画面
-    } else {
-      return 180;      // 大画面
-    }
-  }
-
-  // containerWidth は #grid の幅を使うのが安全
-  function getContainerWidth(grid) {
-    // padding を含めた width を取得
-    return grid.getBoundingClientRect().width;
-  }
 
   // ここから先は、すでに書いてある処理（items を取って layout する部分）が続く…
 
@@ -578,281 +563,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-// ==== Simple Viewer: open (画像 or 動画 or HTML snippet) ====
-(function () {
-  const sv = document.getElementById('simple-viewer');
-  if (!sv) return;
-
-  const svImg  = sv.querySelector('.simple-viewer__img');
-  const svText = sv.querySelector('.simple-viewer__text');
-
-  const svVideoWrap = sv.querySelector('.sv-video');
-  const svVideoTag  = sv.querySelector('.sv-video__tag');
-  const svControls  = sv.querySelector('.sv-video__controls');
-  const svProgTrack = svControls ? svControls.querySelector('.sv-progress') : null;
-  const svProgBar   = svControls ? svControls.querySelector('.sv-progress__bar') : null;
-  const svPlayBtn   = svControls ? svControls.querySelector('.sv-btn--play') : null;
-  const svFsBtn     = svControls ? svControls.querySelector('.sv-btn--fs') : null;
-
-  // ==== プログレス関連 ====
-  let isSeeking        = false;
-  let hideControlsTimer = null;
-
-  function resetControls() {
-    if (svProgBar) {
-      svProgBar.style.width = '0%';
-    }
-    if (svPlayBtn && svVideoTag) {
-      svPlayBtn.textContent = svVideoTag.paused ? 'PLAY' : 'PAUSE';
-    }
-    if (svControls) {
-      svControls.classList.remove('is-visible');
-    }
-    if (hideControlsTimer) {
-      clearTimeout(hideControlsTimer);
-      hideControlsTimer = null;
-    }
-  }
-
-  function updateProgress() {
-    if (!svVideoTag || !svProgBar) return;
-    if (!svVideoTag.duration || !isFinite(svVideoTag.duration)) {
-      svProgBar.style.width = '0%';
-      return;
-    }
-    const ratio = svVideoTag.currentTime / svVideoTag.duration;
-    svProgBar.style.width = `${ratio * 100}%`;
-  }
-
-  function seekFromClientX(clientX) {
-    if (!svProgTrack || !svVideoTag || !svVideoTag.duration) return;
-
-    const rect = svProgTrack.getBoundingClientRect();
-    if (!rect.width) return;
-
-    let ratio = (clientX - rect.left) / rect.width;
-    if (ratio < 0) ratio = 0;
-    if (ratio > 1) ratio = 1;
-
-    svVideoTag.currentTime = ratio * svVideoTag.duration;
-  }
-
-  // ==== プログレスバーでシーク ====
-  if (svProgTrack && svVideoTag) {
-    const onPointerMove = (e) => {
-      if (!isSeeking) return;
-      e.preventDefault();
-      seekFromClientX(e.clientX);
-    };
-
-    const onPointerUp = (e) => {
-      if (!isSeeking) return;
-      isSeeking = false;
-      window.removeEventListener('pointermove', onPointerMove);
-      window.removeEventListener('pointerup', onPointerUp);
-    };
-
-    svProgTrack.addEventListener('pointerdown', (e) => {
-      e.preventDefault();
-      e.stopPropagation();    // 背景クリック扱いにしない
-      isSeeking = true;
-      seekFromClientX(e.clientX);
-
-      window.addEventListener('pointermove', onPointerMove);
-      window.addEventListener('pointerup', onPointerUp);
-    });
-  }
-
-  // ==== 再生 / 一時停止 ====
-  function syncPlayButton() {
-    if (!svPlayBtn || !svVideoTag) return;
-    svPlayBtn.textContent = svVideoTag.paused ? 'PLAY' : 'PAUSE';
-  }
-
-  if (svPlayBtn && svVideoTag) {
-    svPlayBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (svVideoTag.paused) {
-        svVideoTag.play().catch(() => {});
-      } else {
-        svVideoTag.pause();
-      }
-      syncPlayButton();
-    });
-  }
-
-  // ==== フルスクリーン ====
-  if (svFsBtn && svVideoTag) {
-    svFsBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (svVideoTag.requestFullscreen) {
-        svVideoTag.requestFullscreen();
-      } else if (svVideoTag.webkitEnterFullscreen) {
-        svVideoTag.webkitEnterFullscreen();
-      }
-    });
-  }
-
-  // 再生中は progress 更新 + ボタン表示同期
-  if (svVideoTag) {
-    svVideoTag.addEventListener('timeupdate', updateProgress);
-    svVideoTag.addEventListener('play', syncPlayButton);
-    svVideoTag.addEventListener('pause', syncPlayButton);
-  }
-
-  // ==== コントロール表示（iPhone 向け） ====
-  function showControls() {
-    if (!svControls) return;
-    svControls.classList.add('is-visible');
-
-    if (hideControlsTimer) clearTimeout(hideControlsTimer);
-    hideControlsTimer = setTimeout(() => {
-      svControls.classList.remove('is-visible');
-      hideControlsTimer = null;
-    }, 3000);
-  }
-
-  // 「タッチデバイスのみ」タップで表示
-  if (window.matchMedia('(hover: none) and (pointer: coarse)').matches) {
-    if (svVideoWrap) {
-      svVideoWrap.addEventListener('click', (e) => {
-        // まずコントロール表示（動画タップ）
-        showControls();
-      });
-    }
-
-    if (svControls) {
-      svControls.addEventListener('pointerdown', () => {
-        if (hideControlsTimer) clearTimeout(hideControlsTimer);
-      });
-      svControls.addEventListener('pointerup', () => {
-        showControls();
-      });
-    }
-  }
-
-  // ==== Simple Viewer アイコンから開く処理 ====
-  const svButtons = document.querySelectorAll('.icon[data-type="simple-view"]');
-
-  const openSimpleViewer = (btn, e) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    const src = btn.dataset.src || '';
-    if (!src) return;
-
-    const isVideo = /\.(mp4|webm|mov)(\?.*)?$/i.test(src);
-    const isImage = /\.(webp|jpg|jpeg|png|gif|avif)(\?.*)?$/i.test(src);
-    const isHtml  = /\.html?(\?.*)?$/i.test(src);
-
-    sv.classList.add('open');
-
-    // 全ビューをリセット
-    if (svVideoWrap) {
-      svVideoWrap.style.display = 'none';
-    }
-    if (svImg) {
-      svImg.style.display = 'none';
-      svImg.removeAttribute('src');
-    }
-    if (svText) {
-      svText.style.display = 'none';
-      svText.innerHTML = '';
-    }
-
-    // 動画
-    if (isVideo && svVideoWrap && svVideoTag) {
-      svVideoWrap.style.display = 'inline-block';
-
-      // コントロール初期化
-      resetControls();
-
-      // 動画属性
-      svVideoTag.src        = src;
-      svVideoTag.loop       = true;
-      svVideoTag.muted      = true;
-      svVideoTag.playsInline = true;
-      svVideoTag.currentTime = 0;
-
-      // メタデータ読み込み後に縦横判定
-      svVideoTag.onloadedmetadata = () => {
-        const isPortrait = svVideoTag.videoHeight > svVideoTag.videoWidth;
-        svVideoWrap.classList.toggle('is-portrait',  isPortrait);
-        svVideoWrap.classList.toggle('is-landscape', !isPortrait);
-
-        updateProgress();
-        syncPlayButton();
-      };
-
-      svVideoTag.play().catch(() => {
-        // 自動再生がブロックされた場合もとりあえずボタン表示を合わせる
-        syncPlayButton();
-      });
-
-      return;
-    }
-
-    // 画像
-    if (isImage && svImg) {
-      svImg.style.display = 'block';
-      svImg.src = src;
-      return;
-    }
-
-    // HTML スニペット
-    if (isHtml && svText) {
-      fetch(src)
-        .then(r => r.text())
-        .then(html => {
-          svText.innerHTML = html;
-          svText.style.display = 'block';
-        })
-        .catch(() => {
-          svText.innerHTML = 'Failed to load.';
-          svText.style.display = 'block';
-        });
-    }
-  };
-
-  svButtons.forEach((btn) => {
-    // iPhone 対策：pointerdown で開く
-    btn.addEventListener('pointerdown', (e) => {
-      openSimpleViewer(btn, e);
-    });
-
-    // click はキャンセル専用（ダブル発火防止）
-    btn.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-    }, { passive: false });
-  });
-
-  // ==== 閉じる処理 ====
-  function closeSV() {
-    sv.classList.remove('open');
-
-    if (svVideoWrap && svVideoTag) {
-      try { svVideoTag.pause(); } catch (_) {}
-      svVideoTag.removeAttribute('src');
-      svVideoTag.load();
-    }
-
-    resetControls();
-  }
-
-  // 背景クリックで閉じる（sv 自体をクリックしたときだけ）
-  sv.addEventListener('click', (e) => {
-    if (e.target === sv) {
-      closeSV();
-    }
-  });
-
-  // ESC で閉じる
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeSV();
-  });
-
-})();
 
 
 
@@ -873,6 +583,30 @@ document.addEventListener('DOMContentLoaded', () => {
   const progressBar   = controls.querySelector('.sv-progress__bar');
   const btnPlay       = controls.querySelector('.sv-btn--play');
   const btnFs         = controls.querySelector('.sv-btn--fs');
+
+  // ---- タッチ端末判定（CSS とズレないように広めに判定）----
+  const isTouchDevice =
+    (window.matchMedia &&
+      window.matchMedia('(hover: none) and (pointer: coarse)').matches) ||
+    ('ontouchstart' in window) ||
+    (navigator.maxTouchPoints > 0);
+
+  let hideControlsTimer = null;
+
+  // ---- コントロール表示（タップで表示 → 数秒後に消える）----
+  function showControls() {
+    if (!isTouchDevice) return;   // PC では常に表示なので何もしない
+
+    controls.classList.add('is-visible');
+
+    if (hideControlsTimer) {
+      clearTimeout(hideControlsTimer);
+    }
+    hideControlsTimer = setTimeout(() => {
+      controls.classList.remove('is-visible');
+      hideControlsTimer = null;
+    }, 3000); // 3秒後にフェードアウト
+  }
 
   // ---- 再生ボタンの表示を同期 ----
   function syncPlayButton() {
@@ -895,7 +629,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   video.addEventListener('timeupdate', updateProgress);
   video.addEventListener('loadedmetadata', updateProgress);
-  video.addEventListener('play', syncPlayButton);
+
+  video.addEventListener('play', () => {
+    syncPlayButton();
+    // 再生開始時に一度バーを表示
+    showControls();
+  });
+
   video.addEventListener('pause', syncPlayButton);
 
   // ---- プログレスバーでシーク（ドラッグ対応） ----
@@ -933,6 +673,9 @@ document.addEventListener('DOMContentLoaded', () => {
       isSeeking = true;
       seekFromClientX(e.clientX);
 
+      // シーク操作を始めたらコントロールを表示＆タイマー延長
+      showControls();
+
       window.addEventListener('pointermove', onPointerMove);
       window.addEventListener('pointerup', onPointerUp);
     });
@@ -950,6 +693,9 @@ document.addEventListener('DOMContentLoaded', () => {
         video.pause();
       }
       syncPlayButton();
+
+      // ボタンを触ったら 3秒見えるように
+      showControls();
     });
   }
 
@@ -965,6 +711,30 @@ document.addEventListener('DOMContentLoaded', () => {
         // iPhone Safari 向け
         video.webkitEnterFullscreen();
       }
+
+      showControls();
+    });
+  }
+
+  // ---- タッチ端末：動画エリアタップでコントロール表示 ----
+  if (isTouchDevice && videoWrap) {
+    // 動画エリアをタップしたらコントロール表示
+    videoWrap.addEventListener('click', (e) => {
+      e.stopPropagation(); // 背景クリック扱いで閉じないように
+      showControls();
+    });
+
+    // コントロール上を触っている間はタイマーを止める
+    controls.addEventListener('pointerdown', () => {
+      if (hideControlsTimer) {
+        clearTimeout(hideControlsTimer);
+        hideControlsTimer = null;
+      }
+    });
+
+    // 指を離したら、また 3秒カウント
+    controls.addEventListener('pointerup', () => {
+      showControls();
     });
   }
 
