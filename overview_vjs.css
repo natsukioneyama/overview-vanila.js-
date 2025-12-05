@@ -243,6 +243,36 @@ body {
 }
 
 
+/* iOS Safari などの動的ビューポート対応 */
+@supports (height: 100dvh) {
+  .gm-frame {
+    height: 100dvh; /* URLバー込みで毎回計算し直してくれる */
+  }
+}
+
+/* ---- iPhone / 小さい画面用：Lightbox のセンター調整 ---- */
+@media (max-width: 768px) {
+  .gm-frame {
+    /* 100vh のフォールバックはそのまま、100dvh があればそちらが優先 */
+    padding: 16px 12px calc(56px + env(safe-area-inset-bottom));
+  }
+
+  .gm-caption {
+    left: 12px;
+    bottom: calc(12px + env(safe-area-inset-bottom));
+  }
+
+  .gm-counter {
+    right: 14px;
+    bottom: calc(28px + env(safe-area-inset-bottom));
+  }
+
+  .gm-close {
+    right: 12px;
+    bottom: calc(12px + env(safe-area-inset-bottom));
+  }
+}
+
 
 
 
@@ -291,6 +321,7 @@ body {
   font-weight: 400;
   font-size: .8rem;
   letter-spacing: .04em;
+  display: none;
 }
 
 /* close button */

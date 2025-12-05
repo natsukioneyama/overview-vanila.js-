@@ -355,7 +355,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnPlay  = ctrls.querySelector('.sv-btn--play');
   const btnFs    = ctrls.querySelector('.sv-btn--fs');
 
-  let isScrubbing = false;
+
 
   // ---- 再生ボタンの表示を同期 ----
   function syncPlayButton() {
@@ -363,71 +363,64 @@ document.addEventListener('DOMContentLoaded', () => {
     btnPlay.textContent = video.paused ? 'PLAY' : 'PAUSE';
   }
 
-  // ---- プログレス更新 ----
+    // ---- プログレス更新 ----
   function updateProgress() {
-    if (!bar || !video.duration || !isFinite(video.duration)) {
+    if (!video.duration || !isFinite(video.duration)) {
       if (bar) bar.style.transform = 'scaleX(0)';
       return;
     }
     const ratio = video.currentTime / video.duration;
     const clamped = Math.max(0, Math.min(1, ratio || 0));
-    bar.style.transform = `scaleX(${clamped})`;
+    if (bar) {
+      bar.style.transform = `scaleX(${clamped})`;
+    }
   }
 
-  video.addEventListener('timeupdate', updateProgress);
-  video.addEventListener('loadedmetadata', updateProgress);
+  video.addEventListener('timeupdate',       updateProgress);
+  video.addEventListener('loadedmetadata',   updateProgress);
   video.addEventListener('play',  syncPlayButton);
   video.addEventListener('pause', syncPlayButton);
 
-  // ---- シーク（クリック & ドラッグ） ----
-  function seekByEvent(ev) {
+  // ---- 共通の seek 関数（マウス / タッチ / ペン用）----
+  function seekFromClientX(clientX) {
     if (!progress || !video.duration || !isFinite(video.duration)) return;
-    const rect = progress.getBoundingClientRect();
-    const x = ev.clientX ?? ev.touches?.[0]?.clientX;
-    if (x == null) return;
 
-    const ratio = (x - rect.left) / rect.width;
-    const clamped = Math.max(0, Math.min(1, ratio));
-    video.currentTime = clamped * video.duration;
+    const rect = progress.getBoundingClientRect();
+    let ratio = (clientX - rect.left) / rect.width;
+    ratio = Math.max(0, Math.min(1, ratio));
+
+    video.currentTime = ratio * video.duration;
+    updateProgress();
   }
+
+  let isScrubbing = false;
 
   if (progress) {
-    progress.addEventListener('click', (ev) => {
-      ev.stopPropagation();
-      seekByEvent(ev);
-    });
-
-    progress.addEventListener('mousedown', (ev) => {
-      ev.preventDefault();
-      ev.stopPropagation();
+    // pointer 系でまとめて対応（PC / iPhone / iPad 共通）
+    progress.addEventListener('pointerdown', (e) => {
       isScrubbing = true;
-      seekByEvent(ev);
+      progress.setPointerCapture(e.pointerId);
+      seekFromClientX(e.clientX);
     });
 
-    window.addEventListener('mousemove', (ev) => {
+    progress.addEventListener('pointermove', (e) => {
       if (!isScrubbing) return;
-      seekByEvent(ev);
+      seekFromClientX(e.clientX);
     });
 
-    window.addEventListener('mouseup', () => {
+    progress.addEventListener('pointerup', (e) => {
+      if (!isScrubbing) return;
       isScrubbing = false;
+      progress.releasePointerCapture(e.pointerId);
+      syncPlayButton();
     });
 
-    // タッチ用
-    progress.addEventListener('touchstart', (ev) => {
-      isScrubbing = true;
-      seekByEvent(ev);
-    }, { passive: true });
-
-    window.addEventListener('touchmove', (ev) => {
-      if (!isScrubbing) return;
-      seekByEvent(ev);
-    }, { passive: true });
-
-    window.addEventListener('touchend', () => {
+    progress.addEventListener('pointercancel', () => {
       isScrubbing = false;
     });
   }
+
+
 
   // ---- 再生 / 一時停止 ----
   if (btnPlay) {
@@ -442,29 +435,47 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ---- フルスクリーン ----
+    // ---- FULLSCREEN トグル ----
   if (btnFs) {
-    btnFs.addEventListener('click', (ev) => {
-      ev.stopPropagation();
+    btnFs.addEventListener('click', () => {
+      if (!video) return;
 
-      const el = video;
       const doc = document;
+      const el  = video;
 
       const isFs =
         doc.fullscreenElement ||
         doc.webkitFullscreenElement ||
-        doc.msFullscreenElement;
+        el.webkitDisplayingFullscreen;
 
-      if (!isFs) {
-        if (el.requestFullscreen) el.requestFullscreen();
-        else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
-        else if (el.msRequestFullscreen) el.msRequestFullscreen();
+      if (isFs) {
+        // すでにフルスクリーン → 抜ける
+        if (doc.exitFullscreen) {
+          doc.exitFullscreen();
+        } else if (doc.webkitExitFullscreen) {
+          doc.webkitExitFullscreen();
+        } else if (doc.mozCancelFullScreen) {
+          doc.mozCancelFullScreen();
+        } else if (doc.msExitFullscreen) {
+          doc.msExitFullscreen();
+        }
       } else {
-        if (doc.exitFullscreen) doc.exitFullscreen();
-        else if (doc.webkitExitFullscreen) doc.webkitExitFullscreen();
-        else if (doc.msExitFullscreen) doc.msExitFullscreen();
+        // これからフルスクリーンに入る
+        if (el.requestFullscreen) {
+          el.requestFullscreen();
+        } else if (el.webkitRequestFullscreen) {
+          el.webkitRequestFullscreen();
+        } else if (el.webkitEnterFullscreen) {
+          // iOS Safari 向け
+          el.webkitEnterFullscreen();
+        } else if (el.webkitEnterFullScreen) {
+          // 古い iOS Safari 向けの別名
+          el.webkitEnterFullScreen();
+        }
       }
     });
   }
+
 
   // 初期状態の表示
   syncPlayButton();
