@@ -184,7 +184,7 @@ body.jl-ready #grid {
   content: "";
   position: absolute;
   inset: 0;
-  background: rgba(147, 39, 255, 0.763);
+  background: rgba(39, 251, 255, 0.763);
   pointer-events: none;
   z-index: 1;
 }
@@ -635,20 +635,21 @@ body.jl-ready #grid {
 }
 
 
-/* タッチデバイス用：動画タップで一時的にコントロール表示 */
 @media (hover: none) and (pointer: coarse) {
-
-  /* 初期状態では非表示 */
   .gm-video-wrap .sv-controls {
     opacity: 0;
     pointer-events: none;
     transition: opacity .35s ease;
   }
 
-  /* JS で .is-visible が付いたときだけ表示 */
   .gm-video-wrap .sv-controls.is-visible {
     opacity: 1;
     pointer-events: auto;
+  }
+
+  /* ★ 追加：video のタップを全部ラッパーに流す */
+  .gm-video-wrap video {
+    pointer-events: none;
   }
 
   /* タッチ端末では :hover ルールは殺しておく */
@@ -657,3 +658,4 @@ body.jl-ready #grid {
     pointer-events: none;
   }
 }
+
