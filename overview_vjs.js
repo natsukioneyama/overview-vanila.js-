@@ -676,11 +676,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ---- iPhone 等: タップでコントロール表示 ----
-  const isTouch =
-    (window.matchMedia &&
-      window.matchMedia('(hover: none) and (pointer: coarse)').matches) ||
-    ('ontouchstart' in window) ||
-    (navigator.maxTouchPoints > 0);
+const isTouch = matchMedia('(pointer: coarse)').matches;
+
 
     // PC のときは is-visible を常に削除して hover のみにする
 if (!isTouch) {
