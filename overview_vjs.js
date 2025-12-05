@@ -675,19 +675,19 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // ---- iPhone 等: タップでコントロール表示 ----
-const isTouch = matchMedia('(pointer: coarse)').matches;
+  // ---- タッチ端末判定 ----
+  const isTouch = matchMedia('(pointer: coarse)').matches;
 
+  // PC のときは is-visible を常に削除して、hover だけに任せる
+  if (!isTouch) {
+    controls.classList.remove('is-visible');
+    return; // ここで終了 → 以降は iPhone 用ロジック
+  }
 
-    // PC のときは is-visible を常に削除して hover のみにする
-if (!isTouch) {
-  controls.classList.remove('is-visible');
-}
-
-
+  // ==== ここから iPhone / タッチ用 ====
   let hideControlsTimer = null;
 
-  function showControlsOnce() {
+  function showControlsFor(ms = 1000) {
     controls.classList.add('is-visible');
     if (hideControlsTimer) {
       clearTimeout(hideControlsTimer);
@@ -695,33 +695,19 @@ if (!isTouch) {
     hideControlsTimer = setTimeout(() => {
       controls.classList.remove('is-visible');
       hideControlsTimer = null;
-    }, 3000);
-  }
-   if (isTouch) {
-    const handleTap = (e) => {
-      e.stopPropagation();
-      showControlsOnce();
-    };
-
-    // 動画 or ラッパーをタップすると表示
-    videoWrap.addEventListener('pointerdown', handleTap);
-
-    // コントロール上で触っている間はタイマー停止
-    controls.addEventListener('pointerdown', () => {
-      if (hideControlsTimer) {
-        clearTimeout(hideControlsTimer);
-        hideControlsTimer = null;
-      }
-    });
-    controls.addEventListener('pointerup', () => {
-      showControlsOnce();
-    });
-
-    // ★ タッチ端末だけ：再生開始時にも一度だけ表示
-    video.addEventListener('play', () => {
-      showControlsOnce();
-    });
+    }, ms);
   }
 
+  // 動画を開いた直後（play 開始時）に一度だけ表示
+  video.addEventListener('play', () => {
+    showControlsFor(1000);
+  });
+
+  // 動画まわりをタップしたときに表示（pointerdown 1本に絞る）
+  const handleTap = (e) => {
+    e.stopPropagation();
+    showControlsFor(1000);
+  };
+
+  videoWrap.addEventListener('pointerdown', handleTap);
 });
-

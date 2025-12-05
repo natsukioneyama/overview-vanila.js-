@@ -184,7 +184,7 @@ body.jl-ready #grid {
   content: "";
   position: absolute;
   inset: 0;
-  background: rgba(212, 255, 0, 0.763);
+  background: rgb(0, 255, 140);
   pointer-events: none;
   z-index: 1;
 }
