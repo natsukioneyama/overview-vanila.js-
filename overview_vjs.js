@@ -721,18 +721,18 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ---- タッチ端末：動画エリアタップでコントロール表示 ----
+    // ---- タッチ端末：動画エリアタップでコントロール表示 ----
   if (isTouchDevice && videoWrap) {
-    // 動画そのもののタップでも確実に拾う
-    video.addEventListener('click', (e) => {
+    // 動画＋その周囲をタップ / タッチした瞬間にコントロール表示
+    const handleTap = (e) => {
       e.stopPropagation();
       showControls();
-    });
+    };
 
-    // ラッパー（動画の上下の余白）をタップしても表示
-    videoWrap.addEventListener('click', (e) => {
-      e.stopPropagation();
-      showControls();
-    });
+    // iOS Safari で click が拾われないケースがあるので
+    // pointerdown / touchstart を両方仕込む
+    videoWrap.addEventListener('pointerdown', handleTap);
+    videoWrap.addEventListener('touchstart', handleTap);
 
     // コントロール上を触っている間はタイマーを止める
     controls.addEventListener('pointerdown', (e) => {
@@ -747,6 +747,7 @@ document.addEventListener('DOMContentLoaded', () => {
       showControls();
     });
   }
+
 
   // 念のためボタン系は pointer-events を強制 ON
   Array.from(controls.querySelectorAll('button')).forEach((btn) => {
