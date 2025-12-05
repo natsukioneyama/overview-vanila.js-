@@ -184,7 +184,7 @@ body.jl-ready #grid {
   content: "";
   position: absolute;
   inset: 0;
-  background: rgba(245, 134, 134, 0.763);
+  background: rgba(173, 134, 245, 0.763);
   pointer-events: none;
   z-index: 1;
 }
@@ -602,5 +602,18 @@ body.jl-ready #grid {
 @media (max-width: 480px) {
   .sv-controls {
     padding: 8px 12px;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  #simple-viewer .sv-video__controls {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .35s ease;
+  }
+
+  #simple-viewer .sv-video__controls.is-visible {
+    opacity: 1;
+    pointer-events: auto;
   }
 }

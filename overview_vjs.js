@@ -729,6 +729,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+
+  
   // ==== Simple Viewer アイコンから開く処理 ====
   const svButtons = document.querySelectorAll('.icon[data-type="simple-view"]');
 
@@ -847,12 +849,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ==== モバイル用: 動画タップでコントロール表示 → 数秒後に自動で隠す ====
 
+  
+     // ==== モバイル用: 動画タップでコントロール表示 → 数秒後に自動で隠す ====
+
   function showControlsOnce() {
-    const controls = sv.querySelector('.sv-video__controls');
-    if (!controls) return;
+    if (!svControls) return;
 
     // 表示
-    controls.classList.add('is-visible');
+    svControls.classList.add('is-visible');
 
     // 既存タイマーがあればリセット
     if (hideControlsTimer) {
@@ -862,66 +866,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 3秒後に自動で非表示
     hideControlsTimer = setTimeout(() => {
-      controls.classList.remove('is-visible');
+      svControls.classList.remove('is-visible');
       hideControlsTimer = null;
     }, 3000);
   }
-
-  // simple-viewer を閉じるときはタイマーもリセット
-  function resetControlsState() {
-    const controls = sv.querySelector('.sv-video__controls');
-    if (controls) {
-      controls.classList.remove('is-visible');
-    }
-    if (hideControlsTimer) {
-      clearTimeout(hideControlsTimer);
-      hideControlsTimer = null;
-    }
-  }
-
-  // closeSV の最後にこれを呼ぶようにしておく
-  // （closeSV 内の最後に resetControlsState(); を1行追加）
-  // 例：
-  // function closeSV() {
-  //   ...
-  //   resetControlsState();
-  // }
 
   // タッチデバイスだけ有効
   const isTouch =
     ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 
-  if (isTouch && svVideoTag) {
-    // 動画タップでコントロール表示
+  if (isTouch && svVideoTag && svControls) {
+    // 動画タップでコントロール表示（Lightbox はそのまま）
     svVideoTag.addEventListener('click', (e) => {
-      e.stopPropagation();
+      e.stopPropagation(); // 背景クリック扱いにしない
       showControlsOnce();
     });
 
     // コントロール上で操作している間は消さない
-    const controls = sv.querySelector('.sv-video__controls');
-    if (controls) {
-      controls.addEventListener('pointerdown', () => {
-        if (hideControlsTimer) {
-          clearTimeout(hideControlsTimer);
-          hideControlsTimer = null;
-        }
-      });
+    svControls.addEventListener('pointerdown', () => {
+      if (hideControlsTimer) {
+        clearTimeout(hideControlsTimer);
+        hideControlsTimer = null;
+      }
+    });
 
-      controls.addEventListener('pointerup', () => {
-        // 指を離したらまた 3秒カウント再開
-        showControlsOnce();
-      });
-    }
+    svControls.addEventListener('pointerup', () => {
+      // 指を離したらまた 3秒カウント再開
+      showControlsOnce();
+    });
   }
-
 
   // ESC で閉じる
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') closeSV();
   });
-
 })();
+
 
 
 
