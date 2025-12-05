@@ -729,6 +729,11 @@ document.addEventListener('DOMContentLoaded', () => {
       showControls();
     };
 
+
+    video.addEventListener('touchstart', handleTap, { passive: true });
+    video.addEventListener('click', handleTap);
+
+
     // iOS Safari で click が拾われないケースがあるので
     // pointerdown / touchstart を両方仕込む
     videoWrap.addEventListener('pointerdown', handleTap);
