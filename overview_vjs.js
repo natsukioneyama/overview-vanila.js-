@@ -19,7 +19,7 @@
     if (w <= 480) return 10;   // 狭い画面は詰め気味
     if (w <= 768) return 9;    // タブレット
     if (w <= 1200) return 8;   // 中画面
-    return 7;                 // 大画面はゆったり
+    return 7;                  // 大画面は少し詰める
   }
 
   // ==== アイテム情報 ====
@@ -30,11 +30,11 @@
     const h = Number(el.dataset.h) || 1;
     return {
       el,
-      aspectRatio: w / h
+      aspectRatio: w / h,
     };
   });
 
-    // ==== グループ & キャプション生成（data-title 単位） ====
+  // ==== グループ & キャプション生成（data-title / line1 / line2） ====
 
   // key = title + line1 でグループ化
   const groups = new Map();
@@ -44,18 +44,17 @@
     const meta = el.querySelector('.lb-data, img');
     if (!meta) return;
 
-  let title = meta.dataset.title || '';
-  const line1 = meta.dataset.line1 || '';
-  const line2 = meta.dataset.line2 || '';
+    let title = meta.dataset.title || '';
+    const line1 = meta.dataset.line1 || '';
+    const line2 = meta.dataset.line2 || '';
 
-  // ★ title が空の場合、line1 を仮タイトルとして使う
-  if (!title && line1) {
-    title = line1;
-  }
+    // ★ title が空の場合、line1 を仮タイトルとして使う
+    if (!title && line1) {
+      title = line1;
+    }
 
-
-  // ★ 両方空ならスキップ
-  if (!title) return;
+    // ★ 両方空ならスキップ
+    if (!title) return;
 
     const key = `${title}|||${line1}`;
 
@@ -64,10 +63,12 @@
         title,
         line1,
         line2,
-        members: []
+        members: [],
       });
     }
-    groups.get(key).members.push(el);
+
+    const group = groups.get(key);
+    group.members.push(el);
 
     // グループキーを各アイテムに保存
     el.dataset.groupKey = key;
@@ -83,51 +84,32 @@
     const cap = document.createElement('figcaption');
     cap.className = 'ov-cap';
 
-      // グループの先頭にだけ .ov-cap を付与
-  groups.forEach((group) => {
-    if (!group.members.length) return;
+    // ---- 表示するテキストをまとめて、重複を除去 ----
+    const lines = [];
 
-    const headEl = group.members[0];
-    headEl.dataset.head = '1';
+    // group.title には「title か、title が空なら line1」が入っている前提
+    if (group.title) lines.push(group.title);
+    if (group.line1 && !lines.includes(group.line1)) lines.push(group.line1);
+    if (group.line2 && !lines.includes(group.line2)) lines.push(group.line2);
 
-    const cap = document.createElement('figcaption');
-    cap.className = 'ov-cap';
+    // ---- 1行目：太字、2行目以降：細め ----
+    lines.forEach((text, index) => {
+      if (!text) return;
 
-    // ★ title と line1 の関係で表示を分ける
-    if (group.title === group.line1) {
-      // data-title="" だった → line1 がタイトル扱い
-      const b = document.createElement('b');
-      b.textContent = group.line1;
-      cap.appendChild(b);
-
-    } else {
-      // 通常ケース：title がメイン、line1 がサブ
-      const b = document.createElement('b');
-      b.textContent = group.title;
-      cap.appendChild(b);
-
-      if (group.line1) {
+      if (index === 0) {
+        const b = document.createElement('b');
+        b.textContent = text;
+        cap.appendChild(b);
+      } else if (index === 1) {
         const em = document.createElement('em');
-        em.textContent = group.line1;
+        em.textContent = text;
         cap.appendChild(em);
+      } else if (index === 2) {
+        const i = document.createElement('i');
+        i.textContent = text;
+        cap.appendChild(i);
       }
-    }
-
-    if (group.line2) {
-      const i = document.createElement('i');
-      i.textContent = group.line2;
-      cap.appendChild(i);
-    }
-
-    headEl.appendChild(cap);
-  });
-
-
-    if (group.line2) {
-      const i = document.createElement('i');
-      i.textContent = group.line2;
-      cap.appendChild(i);
-    }
+    });
 
     headEl.appendChild(cap);
   });
@@ -176,37 +158,40 @@
   }
 
   // ==== iPhone 等: 1回目タップでキャプション、2回目で Lightbox ====
-  // matchMedia だと iOS でうまくマッチしないことがあるので、タッチデバイス判定に変更
   const isTouchDevice =
-    ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+    'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
   if (isTouchDevice) {
     let armedItem = null;
 
     // capture=true で Lightbox の click より先に処理
-    container.addEventListener('click', (e) => {
-      const item = e.target.closest('.jl-item');
-      if (!item) return;
+    container.addEventListener(
+      'click',
+      (e) => {
+        const item = e.target.closest('.jl-item');
+        if (!item) return;
 
-      const key = item.dataset.groupKey;
-      if (!key) return;
+        const key = item.dataset.groupKey;
+        if (!key) return;
 
-      // 1回目タップ（別のサムネ or まだ何も armed されていない）
-      if (armedItem !== item) {
-        e.preventDefault();
-        e.stopPropagation();
+        // 1回目タップ（別のサムネ or まだ何も armed されていない）
+        if (armedItem !== item) {
+          e.preventDefault();
+          e.stopPropagation();
 
-        armedItem = item;
-        item.classList.add('tap-armed');
-        setGroupHighlightByKey(key, 'tap');
-        return;
-      }
+          armedItem = item;
+          item.classList.add('tap-armed');
+          setGroupHighlightByKey(key, 'tap');
+          return;
+        }
 
-      // 2回目タップ（同じサムネ）
-      clearGroupHighlight();
-      armedItem = null;
-      // preventDefault しない → このまま Lightbox にイベントを渡す
-    }, true);
+        // 2回目タップ（同じサムネ）
+        clearGroupHighlight();
+        armedItem = null;
+        // preventDefault しない → このまま Lightbox にイベントを渡す
+      },
+      true
+    );
   }
 
   // ==== レンダリング ====
@@ -224,8 +209,8 @@
       items.map((i) => ({ aspectRatio: i.aspectRatio })),
       {
         containerWidth,
-        targetRowHeight: getRowHeight(),  // ★ 可変 row 高さ
-        boxSpacing: getBoxSpacing()       // ★ 可変マージン
+        targetRowHeight: getRowHeight(), // ★ 可変 row 高さ
+        boxSpacing: getBoxSpacing(), // ★ 可変マージン
       }
     );
 
@@ -255,7 +240,6 @@
       render();
     }, 150);
   });
-
 })();
 
 
