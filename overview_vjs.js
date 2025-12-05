@@ -704,9 +704,7 @@ if (!isTouch) {
     };
 
     // 動画 or ラッパーをタップすると表示
-    video.addEventListener('click', handleTap);
     videoWrap.addEventListener('pointerdown', handleTap);
-    videoWrap.addEventListener('touchstart', handleTap, { passive: true });
 
     // コントロール上で触っている間はタイマー停止
     controls.addEventListener('pointerdown', () => {
@@ -725,6 +723,5 @@ if (!isTouch) {
     });
   }
 
-  // ★ PC では play 時に何もしない（hover だけで制御）
 });
 
