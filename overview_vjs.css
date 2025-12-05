@@ -72,6 +72,12 @@ body {
   opacity: .8;
 }
 
+
+
+
+
+
+
 /* ============ Layout wrapper ============ */
 .page {
   padding: 0 var(--gutter) var(--gutter);
@@ -113,6 +119,91 @@ body.jl-ready #grid {
   height: 100%;
   object-fit: cover; /* data-w/data-h が実際の比率と合っていればほぼトリミングなし */
 }
+
+
+
+/* ============ Hover caption & group highlight ============ */
+
+/* キャプション共通スタイル */
+.ov-cap {
+  position: absolute;
+  left: 4px;
+  top: 2px;
+  color: #000;
+  font-size: 0.6rem;
+  font-family: inherit;
+  font-style: normal;
+  opacity: 0;
+  pointer-events: none;
+  max-width: 80%;
+  line-height: 1.3;
+}
+
+.ov-cap em,
+.ov-cap i {
+  display: block;
+  opacity: 0.9;
+  font-style: normal;  /* 斜体オフ */
+  font-weight: 600;
+}
+
+.ov-cap b,
+.ov-cap strong {
+  font-weight: 600;
+  font-style: normal;
+}
+
+/* PC: グループ hover 時のオーバーレイ & キャプション表示 */
+@media (hover: hover) and (pointer: fine) {
+
+  /* グループに属するサムネだけ白オーバーレイ */
+  #grid.is-group-hover .jl-item.is-in-group::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.54);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* グループの先頭のサムネだけキャプションを表示 */
+  #grid.is-group-hover .jl-item[data-head="1"].is-in-group .ov-cap {
+    opacity: 1;
+    z-index: 2; /* オーバーレイより前 */
+  }
+}
+
+/* モバイル: 1回タップでキャプション表示、グループをハイライト */
+@media (hover: none) and (pointer: coarse) {
+
+  /* 1回目タップで付く .tap-armed のときだけキャプション表示 */
+  #grid .jl-item.tap-armed .ov-cap {
+    opacity: 1;
+  }
+
+  /* is-in-group が付いたサムネだけ半透明オーバーレイ */
+  #grid.is-group-tap .jl-item.is-in-group::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.54);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* キャプションは常にオーバーレイより前 */
+  #grid .ov-cap {
+    position: absolute;
+    z-index: 2;
+  }
+}
+
+
+
+
+
+
+
 
 /* ============ Fullscreen for video ============ */
 /* フルスクリーン時は必ずオリジナル比率を守る */

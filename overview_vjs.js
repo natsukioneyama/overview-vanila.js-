@@ -1,12 +1,31 @@
 (function () {
-  'use strict';
-
   const container = document.getElementById('grid');
   if (!container) return;
 
-  // HTML に直書きした figure から、比率だけを取り出す
-  const itemElements = Array.from(container.querySelectorAll('.jl-item'));
-  const items = itemElements.map(el => {
+  // ==== 行の高さ（レスポンシブ） ====
+  function getRowHeight() {
+    const w = window.innerWidth;
+
+    if (w <= 480) return 130;      // iPhone
+    if (w <= 768) return 140;      // タブレット小
+    if (w <= 1200) return 150;     // ラップトップ
+    return 180;                    // デスクトップ広め
+  }
+
+  // ==== ボックス間隔（レスポンシブ）====
+  function getBoxSpacing() {
+    const w = window.innerWidth;
+
+    if (w <= 480) return 10;   // 狭い画面は詰め気味
+    if (w <= 768) return 9;    // タブレット
+    if (w <= 1200) return 8;   // 中画面
+    return 12;                 // 大画面はゆったり
+  }
+
+  // ==== アイテム情報 ====
+  const itemElements = Array.from(container.children);
+
+  const items = itemElements.map((el) => {
     const w = Number(el.dataset.w) || 1;
     const h = Number(el.dataset.h) || 1;
     return {
@@ -15,6 +34,178 @@
     };
   });
 
+    // ==== グループ & キャプション生成（data-title 単位） ====
+
+  // key = title + line1 でグループ化
+  const groups = new Map();
+
+  itemElements.forEach((el) => {
+    // 画像 or 動画のメタ情報を取得
+    const meta = el.querySelector('.lb-data, img');
+    if (!meta) return;
+
+  let title = meta.dataset.title || '';
+  const line1 = meta.dataset.line1 || '';
+  const line2 = meta.dataset.line2 || '';
+
+  // ★ title が空の場合、line1 を仮タイトルとして使う
+  if (!title && line1) {
+    title = line1;
+  }
+
+
+  // ★ 両方空ならスキップ
+  if (!title) return;
+
+    const key = `${title}|||${line1}`;
+
+    if (!groups.has(key)) {
+      groups.set(key, {
+        title,
+        line1,
+        line2,
+        members: []
+      });
+    }
+    groups.get(key).members.push(el);
+
+    // グループキーを各アイテムに保存
+    el.dataset.groupKey = key;
+  });
+
+  // グループの先頭にだけ .ov-cap を付与 & data-head マーク
+  groups.forEach((group) => {
+    if (!group.members.length) return;
+
+    const headEl = group.members[0];
+    headEl.dataset.head = '1';
+
+    const cap = document.createElement('figcaption');
+    cap.className = 'ov-cap';
+
+      // グループの先頭にだけ .ov-cap を付与
+  groups.forEach((group) => {
+    if (!group.members.length) return;
+
+    const headEl = group.members[0];
+    headEl.dataset.head = '1';
+
+    const cap = document.createElement('figcaption');
+    cap.className = 'ov-cap';
+
+    // ★ title と line1 の関係で表示を分ける
+    if (group.title === group.line1) {
+      // data-title="" だった → line1 がタイトル扱い
+      const b = document.createElement('b');
+      b.textContent = group.line1;
+      cap.appendChild(b);
+
+    } else {
+      // 通常ケース：title がメイン、line1 がサブ
+      const b = document.createElement('b');
+      b.textContent = group.title;
+      cap.appendChild(b);
+
+      if (group.line1) {
+        const em = document.createElement('em');
+        em.textContent = group.line1;
+        cap.appendChild(em);
+      }
+    }
+
+    if (group.line2) {
+      const i = document.createElement('i');
+      i.textContent = group.line2;
+      cap.appendChild(i);
+    }
+
+    headEl.appendChild(cap);
+  });
+
+
+    if (group.line2) {
+      const i = document.createElement('i');
+      i.textContent = group.line2;
+      cap.appendChild(i);
+    }
+
+    headEl.appendChild(cap);
+  });
+
+  // ==== グループのハイライト制御（ホバー & タップ共通） ====
+
+  function clearGroupHighlight() {
+    container.classList.remove('is-group-hover', 'is-group-tap');
+
+    itemElements.forEach((el) => {
+      el.classList.remove('is-in-group', 'tap-armed');
+    });
+  }
+
+  function setGroupHighlightByKey(key, mode) {
+    const group = groups.get(key);
+    if (!group) return;
+
+    clearGroupHighlight();
+
+    group.members.forEach((el) => {
+      el.classList.add('is-in-group');
+    });
+
+    if (mode === 'hover') {
+      container.classList.add('is-group-hover');
+    } else if (mode === 'tap') {
+      container.classList.add('is-group-tap');
+    }
+  }
+
+  // ==== PC: ホバーでグループキャプション ====
+  if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+    itemElements.forEach((el) => {
+      const key = el.dataset.groupKey;
+      if (!key) return;
+
+      el.addEventListener('mouseenter', () => {
+        setGroupHighlightByKey(key, 'hover');
+      });
+
+      el.addEventListener('mouseleave', () => {
+        clearGroupHighlight();
+      });
+    });
+  }
+
+  // ==== iPhone 等: 1回目タップでキャプション、2回目で Lightbox ====
+  if (window.matchMedia('(hover: none) and (pointer: coarse)').matches) {
+    let armedItem = null;
+
+    // capture=true で Lightbox の click より先に処理
+    container.addEventListener('click', (e) => {
+      const item = e.target.closest('.jl-item');
+      if (!item) return;
+
+      const key = item.dataset.groupKey;
+      if (!key) return;
+
+      // 1回目タップ（別のサムネ or まだ何も armed されていない）
+      if (armedItem !== item) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        armedItem = item;
+        item.classList.add('tap-armed');
+        setGroupHighlightByKey(key, 'tap');
+        return;
+      }
+
+      // 2回目タップ（同じサムネ）
+      clearGroupHighlight();
+      armedItem = null;
+      // preventDefault しない → このまま Lightbox にイベントを渡す
+    }, true);
+  }
+
+  // ==== レンダリング ====
   function render() {
     const jl = window.justifiedLayout;
     if (!jl) {
@@ -25,81 +216,43 @@
     const containerWidth = container.clientWidth;
     if (!containerWidth) return;
 
-    // justified-layout に比率だけ渡す
     const layout = jl(
-      items.map(i => ({ aspectRatio: i.aspectRatio })),
+      items.map((i) => ({ aspectRatio: i.aspectRatio })),
       {
         containerWidth,
-        targetRowHeight: 150, // 行の“理想高さ” – 好きに調整してOK
-        boxSpacing: 8
+        targetRowHeight: getRowHeight(),  // ★ 可変 row 高さ
+        boxSpacing: getBoxSpacing()       // ★ 可変マージン
       }
     );
 
-    // コンテナ高さ
     container.style.height = layout.containerHeight + 'px';
 
-    // 各 box を DOM に反映
     layout.boxes.forEach((box, index) => {
-      const it = items[index];
-      const el = it.el;
-
-      el.style.transform = `translate(${box.left}px, ${box.top}px)`;
-      el.style.width  = box.width + 'px';
+      const item = items[index];
+      const el = item.el;
+      el.style.position = 'absolute';
+      el.style.left = box.left + 'px';
+      el.style.top = box.top + 'px';
+      el.style.width = box.width + 'px';
       el.style.height = box.height + 'px';
     });
 
-        // レイアウト完了後に動画を自動再生
-    const videos = container.querySelectorAll('video');
-    videos.forEach(v => {
-      v.muted = true;
-      v.playsInline = true;
-      v.loop = true;
-
-      const p = v.play();
-      if (p && p.catch) {
-        p.catch(() => {}); // Safari の再生制限エラーを防ぐ
-      }
-    });
-
-        document.body.classList.add('jl-ready');
+    document.body.classList.add('jl-ready');
   }
 
-  // 初回 & リサイズ
-  window.addEventListener('load', render);
-  window.addEventListener('resize', render);
+  // 初回描画
+  render();
 
-
-  // ★ ここから追加：フルスクリーンボタンの処理
-  document.addEventListener('click', function (e) {
-    const btn = e.target.closest('.fs-btn');
-    if (!btn) return;
-
-    // ボタンが属している video figure を探す
-    const fig = btn.closest('.jl-item.is-video');
-    if (!fig) return;
-
-    const video = fig.querySelector('video');
-    if (!video) return;
-
-    // フルスクリーン API（ブラウザごとに分岐）
-    if (video.requestFullscreen) {
-      video.requestFullscreen();
-    } else if (video.webkitRequestFullscreen) { // Safari
-      video.webkitRequestFullscreen();
-    } else if (video.msRequestFullscreen) {     // 古いEdge
-      video.msRequestFullscreen();
-    }
-
-    // 全画面に入ったら確実に再生
-    const p = video.play();
-    if (p && p.catch) {
-      p.catch(() => {});
-    }
+  // リサイズ時（デバウンス）
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    if (resizeTimer) clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      render();
+    }, 150);
   });
-  // ★ 追加ここまで
 
-})(); // ← IIFE の閉じかっこ
-
+})();
 
 
 
@@ -118,6 +271,29 @@
 
 /* ========== Lightbox (gm) ========== */
 document.addEventListener('DOMContentLoaded', () => {
+
+  // ==== 画面幅に応じた rowHeight を返す ====
+  function getRowHeight() {
+    const w = window.innerWidth;
+    if (w <= 480) {
+      return 130;      // iPhone 幅
+    } else if (w <= 768) {
+      return 140;      // 小さめタブレット
+    } else if (w <= 1200) {
+      return 150;      // 中画面
+    } else {
+      return 180;      // 大画面
+    }
+  }
+
+  // containerWidth は #grid の幅を使うのが安全
+  function getContainerWidth(grid) {
+    // padding を含めた width を取得
+    return grid.getBoundingClientRect().width;
+  }
+
+  // ここから先は、すでに書いてある処理（items を取って layout する部分）が続く…
+
   const gm      = document.getElementById('gm');
   const gmFrame = gm.querySelector('.gm-frame');
   const gmImg   = gm.querySelector('#gmImage');
