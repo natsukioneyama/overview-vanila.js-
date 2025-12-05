@@ -675,19 +675,21 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+
+
   // ---- タッチ端末判定 ----
   const isTouch = matchMedia('(pointer: coarse)').matches;
 
-  // PC のときは is-visible を常に削除して、hover だけに任せる
+  // PC のときは is-visible を使わず、hover だけに任せる
   if (!isTouch) {
     controls.classList.remove('is-visible');
-    return; // ここで終了 → 以降は iPhone 用ロジック
+    return; // ここでこの関数（DOMContentLoaded 内）の残りを終了
   }
 
-  // ==== ここから iPhone / タッチ用 ====
+  // ここから下はタッチ端末専用（iPhone / Android）
   let hideControlsTimer = null;
 
-  function showControlsFor(ms = 1000) {
+  function showControlsOnce() {
     controls.classList.add('is-visible');
     if (hideControlsTimer) {
       clearTimeout(hideControlsTimer);
@@ -695,19 +697,33 @@ document.addEventListener('DOMContentLoaded', () => {
     hideControlsTimer = setTimeout(() => {
       controls.classList.remove('is-visible');
       hideControlsTimer = null;
-    }, ms);
+    }, 1000); // 表示時間は 1000ms（1秒） 好みで調整OK
   }
 
-  // 動画を開いた直後（play 開始時）に一度だけ表示
-  video.addEventListener('play', () => {
-    showControlsFor(1000);
-  });
-
-  // 動画まわりをタップしたときに表示（pointerdown 1本に絞る）
+  // ----- タッチ端末だけ：動画本体をタップで表示 -----
   const handleTap = (e) => {
     e.stopPropagation();
-    showControlsFor(1000);
+    showControlsOnce();
   };
 
-  videoWrap.addEventListener('pointerdown', handleTap);
-});
+  // ★ 動画本体だけをタップターゲットにする
+  video.addEventListener('pointerdown', handleTap);
+  video.addEventListener('touchstart', handleTap, { passive: true });
+
+  // コントロール上で触っている間はフェードアウト停止
+  controls.addEventListener('pointerdown', () => {
+    if (hideControlsTimer) {
+      clearTimeout(hideControlsTimer);
+      hideControlsTimer = null;
+    }
+  });
+
+  controls.addEventListener('pointerup', () => {
+    showControlsOnce();
+  });
+
+  // 再生開始時に一度表示
+  video.addEventListener('play', () => {
+    showControlsOnce();
+  });
+}); // ← document.addEventListener('DOMContentLoaded', () => { の閉じカッコ

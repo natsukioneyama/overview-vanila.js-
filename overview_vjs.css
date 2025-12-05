@@ -184,7 +184,7 @@ body.jl-ready #grid {
   content: "";
   position: absolute;
   inset: 0;
-  background: rgb(0, 255, 140);
+  background: rgb(43, 0, 255);
   pointer-events: none;
   z-index: 1;
 }
@@ -377,6 +377,9 @@ body.jl-ready #grid {
   max-width: 90vw;
   max-height: 90vh;
   object-fit: contain;
+
+    pointer-events: auto;
+
 }
 
 
@@ -517,9 +520,11 @@ body.jl-ready #grid {
   align-items: center;
   justify-content: center;
   z-index: 20;
-
   opacity: 0;
   transition: opacity .35s ease;
+
+    pointer-events: none;
+
 }
 
 .gm-video-wrap.is-ready {
