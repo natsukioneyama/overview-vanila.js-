@@ -230,7 +230,7 @@ body.jl-ready #grid {
   /* ★ ここがポイント：100vh からフッター分を引く */
   height: calc(100vh - var(--gm-footer-h));
 
-  padding: 40px 20px 80px; /* 上・左右・下の余白 */
+  padding: 0;
   box-sizing: border-box;
 
   display: flex;
@@ -241,9 +241,7 @@ body.jl-ready #grid {
 
 /* ---- iPhone / 小さい画面用：Lightbox のセンター調整 ---- */
 @media (max-width: 768px) {
-  .gm-frame {
-        padding: 16px 12px calc(56px + env(safe-area-inset-bottom));
-  }
+
 
   .gm-caption {
     left: 12px;
