@@ -577,17 +577,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-
 // ==== gm video controls: progress + PLAY/FULL ====
-(function () {
-  const gm = document.querySelector('.gm');
+document.addEventListener('DOMContentLoaded', () => {
+  const gm = document.getElementById('gm');
   if (!gm) return;
 
   const videoWrap = gm.querySelector('.gm-video-wrap');
-  const video     = videoWrap ? videoWrap.querySelector('video') : null;
+  const video     = document.getElementById('gmVideo');
   const controls  = gm.querySelector('.sv-controls');
 
-  if (!video || !controls) return;
+  if (!videoWrap || !video || !controls) return;
 
   const progressTrack = controls.querySelector('.sv-progress');
   const progressBar   = controls.querySelector('.sv-progress__bar');
@@ -620,10 +619,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ---- 再生ボタンの表示を同期 ----
   function syncPlayButton() {
-  if (!btnPlay) return;
-  btnPlay.textContent = video.paused ? 'PLAY' : 'PAUSE';
- }
-
+    if (!btnPlay) return;
+    // 一時停止中 → PLAY / 再生中 → PAUSE
+    btnPlay.textContent = video.paused ? 'PLAY' : 'PAUSE';
+  }
 
   // ---- プログレスバー更新 ----
   function updateProgress() {
@@ -668,7 +667,7 @@ document.addEventListener('DOMContentLoaded', () => {
       seekFromClientX(e.clientX);
     };
 
-    const onPointerUp = (e) => {
+    const onPointerUp = () => {
       if (!isSeeking) return;
       isSeeking = false;
       window.removeEventListener('pointermove', onPointerMove);
@@ -724,7 +723,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ---- タッチ端末：動画エリアタップでコントロール表示 ----
-    // ---- タッチ端末：動画エリアタップでコントロール表示 ----
   if (isTouchDevice && videoWrap) {
     // 動画＋その周囲をタップ / タッチした瞬間にコントロール表示
     const handleTap = (e) => {
@@ -732,10 +730,8 @@ document.addEventListener('DOMContentLoaded', () => {
       showControls();
     };
 
-
     video.addEventListener('touchstart', handleTap, { passive: true });
     video.addEventListener('click', handleTap);
-
 
     // iOS Safari で click が拾われないケースがあるので
     // pointerdown / touchstart を両方仕込む
@@ -743,7 +739,7 @@ document.addEventListener('DOMContentLoaded', () => {
     videoWrap.addEventListener('touchstart', handleTap);
 
     // コントロール上を触っている間はタイマーを止める
-    controls.addEventListener('pointerdown', (e) => {
+    controls.addEventListener('pointerdown', () => {
       if (hideControlsTimer) {
         clearTimeout(hideControlsTimer);
         hideControlsTimer = null;
@@ -751,11 +747,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // 指を離したら、また 3秒カウント
-    controls.addEventListener('pointerup', (e) => {
+    controls.addEventListener('pointerup', () => {
       showControls();
     });
   }
-
 
   // 念のためボタン系は pointer-events を強制 ON
   Array.from(controls.querySelectorAll('button')).forEach((btn) => {
@@ -765,4 +760,4 @@ document.addEventListener('DOMContentLoaded', () => {
   // 初期状態の同期
   syncPlayButton();
   updateProgress();
-})();
+});
