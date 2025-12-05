@@ -184,7 +184,7 @@ body.jl-ready #grid {
   content: "";
   position: absolute;
   inset: 0;
-  background: rgba(10, 10, 10, 0.763);
+  background: rgba(255, 0, 0, 0.763);
   pointer-events: none;
   z-index: 1;
 }
@@ -612,10 +612,4 @@ body.jl-ready #grid {
     pointer-events: auto;
   }
 
-  /* 必要なら :hover を殺したい場合はコメント解除
-  .gm-video-wrap:hover .sv-controls {
-    opacity: 0;
-    pointer-events: none;
-  }
-  */
 }

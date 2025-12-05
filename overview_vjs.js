@@ -700,8 +700,7 @@ if (!isTouch) {
       hideControlsTimer = null;
     }, 3000);
   }
-
-  if (isTouch) {
+   if (isTouch) {
     const handleTap = (e) => {
       e.stopPropagation();
       showControlsOnce();
@@ -722,11 +721,13 @@ if (!isTouch) {
     controls.addEventListener('pointerup', () => {
       showControlsOnce();
     });
+
+    // ★ タッチ端末だけ：再生開始時にも一度だけ表示
+    video.addEventListener('play', () => {
+      showControlsOnce();
+    });
   }
 
-  // ---- 初期状態 ----
-  // 動画再生開始時にも一度だけ表示（PCでも見えるように）
-  video.addEventListener('play', () => {
-    controls.classList.add('is-visible');
-  });
+  // ★ PC では play 時に何もしない（hover だけで制御）
 });
+
