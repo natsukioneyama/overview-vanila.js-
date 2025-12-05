@@ -6,7 +6,7 @@
   function getRowHeight() {
     const w = window.innerWidth;
 
-    if (w <= 480) return 150;      // iPhone
+    if (w <= 480) return 180;      // iPhone
     if (w <= 768) return 160;      // タブレット小
     if (w <= 1200) return 170;     // ラップトップ
     return 180;                    // デスクトップ広め
