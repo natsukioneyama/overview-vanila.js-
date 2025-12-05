@@ -30,8 +30,8 @@
       items.map(i => ({ aspectRatio: i.aspectRatio })),
       {
         containerWidth,
-        targetRowHeight: 140, // 行の“理想高さ” – 好きに調整してOK
-        boxSpacing: 15
+        targetRowHeight: 150, // 行の“理想高さ” – 好きに調整してOK
+        boxSpacing: 8
       }
     );
 
@@ -133,41 +133,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const gmNext  = gm.querySelector('.gm-next');
   const gmBg    = gm.querySelector('.gm-backdrop');
   
-    const items = Array.from(document.querySelectorAll('#grid .jl-item'));
+ const items = Array.from(document.querySelectorAll('#grid .jl-item'));
 
-  // ---- iOS だけ Lightbox 枠の高さを visual viewport に合わせる ----
-  const ua    = navigator.userAgent || navigator.vendor || window.opera;
-  const isIOS = /iPhone|iPad|iPod/i.test(ua);
 
-  function adjustIOSFrameHeight() {
-    if (!gmFrame) return;
-
-    // iOS 以外 → CSS の min-height:100vh に任せる（ピョコ防止）
-    if (!isIOS) {
-      gmFrame.style.removeProperty('height');
-      gmFrame.style.removeProperty('min-height');
-      return;
-    }
-
-    // 横向きやタブレットっぽい幅なら、特別な処理をしない
-    if (window.innerWidth > 768) {
-      gmFrame.style.removeProperty('height');
-      gmFrame.style.removeProperty('min-height');
-      return;
-    }
-
-    // iOS 縦向き：visual viewport の高さにぴったり合わせる
-    const h = window.innerHeight || gmFrame.clientHeight;
-    gmFrame.style.height     = h + 'px';
-    gmFrame.style.minHeight  = h + 'px';
-  }
-
-  // 初期表示・向き変更・リサイズで高さを更新
-  adjustIOSFrameHeight();
-  window.addEventListener('orientationchange', adjustIOSFrameHeight);
-  window.addEventListener('resize', adjustIOSFrameHeight);
-
- 
 
   let currentIndex = 0;
     const imgCache = new Map(); // full src -> { image, promise }

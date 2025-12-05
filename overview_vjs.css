@@ -193,7 +193,17 @@ body.jl-ready #grid {
   z-index: 9999;
   display: grid;
   place-items: center;
+
+  /* ★ 画面下のキャプション・クローズボタン用スペース */
+  --gm-footer-h: 120px;
 }
+
+@media (max-width: 767px) {
+  .gm {
+    --gm-footer-h: 140px;
+  }
+}
+
 
 .gm-backdrop {
   position: absolute;
@@ -215,8 +225,11 @@ body.jl-ready #grid {
 /* Frame (画像・動画の枠) */
 .gm-frame {
   position: relative;
-  width: 100vw;
-  height: 100vh;
+  width: 98vw;
+
+  /* ★ ここがポイント：100vh からフッター分を引く */
+  height: calc(100vh - var(--gm-footer-h));
+
   padding: 40px 20px 80px; /* 上・左右・下の余白 */
   box-sizing: border-box;
 
@@ -224,15 +237,6 @@ body.jl-ready #grid {
   align-items: center;
   justify-content: center;
 }
-
-/* デスクトップ幅では きっちり 100vh に固定してサイズを合わせる */
-@media (min-width: 769px) {
-  .gm-frame {
-    height: 100vh;       /* ぴったり画面の高さに */
-    min-height: 0;       /* 上の min-height を無効化 */
-  }
-}
-
 
 
 /* ---- iPhone / 小さい画面用：Lightbox のセンター調整 ---- */
@@ -393,6 +397,24 @@ body.jl-ready #grid {
   touch-action: none !important;
   -webkit-overflow-scrolling: auto !important;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 /* ====== Custom video controls (sv) ====== */
