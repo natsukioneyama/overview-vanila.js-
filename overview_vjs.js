@@ -620,9 +620,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ---- 再生ボタンの表示を同期 ----
   function syncPlayButton() {
-    if (!btnPlay) return;
-    btnPlay.textContent = video.paused ? 'PAUSE' : 'PAUSE'; // 表示を変えないならここは好みで
-  }
+  if (!btnPlay) return;
+  btnPlay.textContent = video.paused ? 'PLAY' : 'PAUSE';
+ }
+
 
   // ---- プログレスバー更新 ----
   function updateProgress() {
