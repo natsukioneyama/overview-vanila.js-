@@ -87,7 +87,7 @@ body {
 #grid {
   position: relative;
   width: 100%;
-  margin: 8px 0 48px;
+  margin: 8px 0 20px;
 
   opacity: 0;
   pointer-events: none;

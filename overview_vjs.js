@@ -176,7 +176,11 @@
   }
 
   // ==== iPhone 等: 1回目タップでキャプション、2回目で Lightbox ====
-  if (window.matchMedia('(hover: none) and (pointer: coarse)').matches) {
+  // matchMedia だと iOS でうまくマッチしないことがあるので、タッチデバイス判定に変更
+  const isTouchDevice =
+    ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+
+  if (isTouchDevice) {
     let armedItem = null;
 
     // capture=true で Lightbox の click より先に処理
