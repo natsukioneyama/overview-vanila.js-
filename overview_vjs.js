@@ -395,6 +395,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // まず静止画を隠す
     gmImg.hidden = true;
     gmImg.classList.remove('ready');
+    gmImg.style.pointerEvents = 'none';   // ★ 追加：タップを完全に殺す
+
 
     // ラッパーと video を表示準備（ただしフェードインは後で）
     gmVWrap.hidden = false;
