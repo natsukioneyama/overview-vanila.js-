@@ -60,6 +60,8 @@
         p.catch(() => {}); // Safari の再生制限エラーを防ぐ
       }
     });
+    
+        document.body.classList.add('jl-ready');
   }
 
   // 初回 & リサイズ
@@ -133,6 +135,52 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const items = Array.from(document.querySelectorAll('#grid .jl-item'));
   let currentIndex = 0;
+    const imgCache = new Map(); // full src -> { image, promise }
+
+  // ---- フルサイズ画像をプリロード＆キャッシュ ----
+  function preloadFullImage(full) {
+    if (!full) return null;
+
+    // すでにキャッシュ済みならそれを返す
+    let record = imgCache.get(full);
+    if (record) return record;
+
+    const image = new Image();
+    image.src = full;
+
+    let promise;
+    if (image.decode) {
+      // decode 対応ブラウザ（Safari も OK）
+      promise = image.decode().catch(() => {});
+    } else {
+      // 古いブラウザ用フォールバック
+      promise = new Promise((resolve) => {
+        image.onload  = () => resolve();
+        image.onerror = () => resolve();
+      });
+    }
+
+    record = { image, promise };
+    imgCache.set(full, record);
+    return record;
+  }
+
+  // ---- 前後の画像をプリロード（常に先読み）----
+  function preloadAround(index) {
+    const targets = [index + 1, index - 1, index + 2, index - 2];
+
+    targets.forEach((i) => {
+      const safeIndex = (i + items.length) % items.length;
+      const item = items[safeIndex];
+      if (!item || item.classList.contains('is-video')) return;
+
+      const img = item.querySelector('img');
+      if (!img) return;
+
+      const full = img.dataset.full || img.src;
+      preloadFullImage(full);
+    });
+  }
 
   function openAt(index) {
     currentIndex = (index + items.length) % items.length;
@@ -159,28 +207,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
     updateCaption(img, meta);
     updateCounter();
-
+   
+    preloadAround(currentIndex);
     gm.setAttribute('aria-hidden', 'false');
   }
 
   function showImage(img) {
     const full = img.dataset.full || img.src;
-    const preload = new Image();
-    preload.src = full;
 
-    preload.onload = () => {
+    // まずプリロード（キャッシュ取得）
+    const record = preloadFullImage(full);
+    const apply = () => {
       gmImg.src = full;
       gmImg.hidden = false;
       gmImg.classList.add('ready');
     };
 
-    // 念のためエラー時も表示だけはする
-    preload.onerror = () => {
-      gmImg.src = full;
-      gmImg.hidden = false;
-      gmImg.classList.add('ready');
-    };
+    if (record && record.promise) {
+      // すでにロード中 or これからロード → decode 完了後に表示
+      record.promise.then(apply);
+    } else {
+      // 何らかの理由で record が無い時のフォールバック
+      apply();
+    }
   }
+
 
   // サムネをクリックしたときに呼ばれる：動画を自動再生＋ループ
   function showVideo(meta) {

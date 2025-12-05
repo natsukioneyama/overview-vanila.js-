@@ -83,7 +83,19 @@ body {
   position: relative;
   width: min(1200px, 100vw - 2 * var(--gutter));
   margin: 8px auto 48px;
+
+  /* ★ 初期状態では非表示（レイアウト計算中） */
+  opacity: 0;
+  pointer-events: none;
 }
+
+/* ★ JS で body に .jl-ready が付いたら表示 */
+body.jl-ready #grid {
+  opacity: 1;
+  pointer-events: auto;
+  transition: opacity 0.25s ease;
+}
+
 
 /* ============ Items (images & videos) ============ */
 /* 各アイテム（画像・動画共通） */
