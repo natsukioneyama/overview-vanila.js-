@@ -161,7 +161,7 @@ body.jl-ready #grid {
     content: "";
     position: absolute;
     inset: 0;
-    background: rgba(255, 255, 255, 0.763);
+    background: rgba(230, 132, 132, 0.763);
     pointer-events: none;
     z-index: 1;
   }
@@ -175,8 +175,14 @@ body.jl-ready #grid {
 
 /* モバイル: 1回タップでキャプション表示、グループをハイライト */
 
-  #grid .jl-item.tap-armed .ov-cap {
+ 
+/* タッチデバイス用: 1回タップでキャプション表示、グループをハイライト */
+/* JS で is-group-tap / is-in-group / data-head="1" が付く前提 */
+
+/* グループの先頭サムネだけキャプション表示（タップ中のグループ） */
+#grid.is-group-tap .jl-item[data-head="1"].is-in-group .ov-cap {
   opacity: 1;
+  z-index: 2; /* オーバーレイより前 */
 }
 
 /* is-in-group が付いたサムネだけ半透明オーバーレイ */
@@ -194,6 +200,7 @@ body.jl-ready #grid {
   position: absolute;
   z-index: 2;
 }
+
 
 
 
