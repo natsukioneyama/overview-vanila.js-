@@ -184,7 +184,7 @@ body.jl-ready #grid {
   content: "";
   position: absolute;
   inset: 0;
-  background: rgba(175, 245, 134, 0.763);
+  background: rgba(255, 116, 243, 0.763);
   pointer-events: none;
   z-index: 1;
 }
@@ -410,12 +410,14 @@ body.jl-ready #grid {
   font-weight: 700;
   font-size: .9rem;
   letter-spacing: 0.05em;
+  display: none;
 }
 
 .gm-name .gm-subtitle {
   font-weight: 700;
   font-size: .7rem;
   letter-spacing: 0.04em;
+  display: none;
 }
 
 /* counter (右下) */
@@ -566,7 +568,7 @@ body.jl-ready #grid {
 .sv-progress {
   position: relative;
   height: 6px;
-  background: transparent;
+  background: rgba(0, 0, 0, 0.3);
   overflow: hidden;
   cursor: pointer;
 }
