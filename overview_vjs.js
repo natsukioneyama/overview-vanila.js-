@@ -831,14 +831,16 @@ document.addEventListener('DOMContentLoaded', () => {
   function closeSV() {
     sv.classList.remove('open');
 
-    if (svVideoWrap && svVideoTag) {
+    if (svVideoTag) {
       try { svVideoTag.pause(); } catch (_) {}
       svVideoTag.removeAttribute('src');
       svVideoTag.load();
     }
 
-    resetControls();
+    // ★ ここを追加
+    resetMobileControls();
   }
+
 
   // 背景クリックで閉じる（sv 自体をクリックしたときだけ）
   sv.addEventListener('click', (e) => {
@@ -847,18 +849,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-    // ==== モバイル用: 動画タップでコントロール表示 → 数秒後に自動で隠す ====
+  // ==== モバイル用: 動画タップでコントロール表示 → 数秒後に自動で隠す ====
 
-  
-     // ==== モバイル用: 動画タップでコントロール表示 → 数秒後に自動で隠す ====
+  // ※ hideControlsTimer はこの IIFE の先頭付近で
+  //   let hideControlsTimer = null;
+  // と1回だけ宣言しておいてください。
 
-  function showControlsOnce() {
+  function showMobileControlsOnce() {
     if (!svControls) return;
 
     // 表示
     svControls.classList.add('is-visible');
 
-    // 既存タイマーがあればリセット
+    // 既存タイマーをリセット
     if (hideControlsTimer) {
       clearTimeout(hideControlsTimer);
       hideControlsTimer = null;
@@ -871,18 +874,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 3000);
   }
 
-  // タッチデバイスだけ有効
+  function resetMobileControls() {
+    if (!svControls) return;
+    svControls.classList.remove('is-visible');
+
+    if (hideControlsTimer) {
+      clearTimeout(hideControlsTimer);
+      hideControlsTimer = null;
+    }
+  }
+
   const isTouch =
     ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 
   if (isTouch && svVideoTag && svControls) {
-    // 動画タップでコントロール表示（Lightbox はそのまま）
+    // 動画タップでコントロール表示
     svVideoTag.addEventListener('click', (e) => {
-      e.stopPropagation(); // 背景クリック扱いにしない
-      showControlsOnce();
+      // 背景クリック扱い（閉じる）にならないように止める
+      e.stopPropagation();
+      showMobileControlsOnce();
     });
 
-    // コントロール上で操作している間は消さない
+    // コントロール操作中はタイマー停止
     svControls.addEventListener('pointerdown', () => {
       if (hideControlsTimer) {
         clearTimeout(hideControlsTimer);
@@ -890,12 +903,14 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
+    // 指を離したら再び 3秒カウント
     svControls.addEventListener('pointerup', () => {
-      // 指を離したらまた 3秒カウント再開
-      showControlsOnce();
+      showMobileControlsOnce();
     });
   }
 
+  
+ 
   // ESC で閉じる
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') closeSV();
