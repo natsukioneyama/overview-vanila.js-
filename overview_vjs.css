@@ -87,7 +87,7 @@ body {
 #grid {
   position: relative;
   width: 100%;
-  margin: 8px 0 20px;
+  margin: 8px 0 25px;
 
   opacity: 0;
   pointer-events: none;
@@ -184,7 +184,7 @@ body.jl-ready #grid {
   content: "";
   position: absolute;
   inset: 0;
-  background: rgba(255, 255, 255, 0.763);
+  background: rgba(255, 133, 133, 0.763);
   pointer-events: none;
   z-index: 1;
 }
