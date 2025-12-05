@@ -392,12 +392,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const src = meta.dataset.full;
     if (!src) return;
 
-    // 静止画を隠して動画ラッパーを表示
+    // まず静止画を隠す
     gmImg.hidden = true;
     gmImg.classList.remove('ready');
 
+    // ラッパーと video を表示準備（ただしフェードインは後で）
     gmVWrap.hidden = false;
     gmVideo.hidden = false;
+    gmVWrap.classList.remove('is-ready');
 
     // ループ ON
     gmVideo.loop = true;
@@ -410,6 +412,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // 毎回頭から再生
     gmVideo.currentTime = 0;
 
+    // 最初のフレームが読み込まれたらフェードイン
+    const onFirstFrame = () => {
+      gmVWrap.classList.add('is-ready');
+      gmVideo.removeEventListener('loadeddata', onFirstFrame);
+    };
+    gmVideo.addEventListener('loadeddata', onFirstFrame);
+
     // 自動再生（ミュート＋playsinline なら Safari でも通るはず）
     const p = gmVideo.play();
     if (p && p.then) {
@@ -418,6 +427,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
   }
+
 
 
 
@@ -566,8 +576,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-
-
 // ==== gm video controls: progress + PLAY/FULL ====
 (function () {
   const gm = document.querySelector('.gm');
@@ -584,7 +592,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnPlay       = controls.querySelector('.sv-btn--play');
   const btnFs         = controls.querySelector('.sv-btn--fs');
 
-  // ---- タッチ端末判定（CSS とズレないように広めに判定）----
+  // ---- タッチ端末判定（iPhone / Android 含む）----
   const isTouchDevice =
     (window.matchMedia &&
       window.matchMedia('(hover: none) and (pointer: coarse)').matches) ||
@@ -595,7 +603,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ---- コントロール表示（タップで表示 → 数秒後に消える）----
   function showControls() {
-    if (!isTouchDevice) return;   // PC では常に表示なので何もしない
+    if (!isTouchDevice) return;   // PC では常時表示のままにしたい場合
 
     controls.classList.add('is-visible');
 
@@ -611,7 +619,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ---- 再生ボタンの表示を同期 ----
   function syncPlayButton() {
     if (!btnPlay) return;
-    btnPlay.textContent = video.paused ? 'PLAY' : 'PAUSE';
+    btnPlay.textContent = video.paused ? 'PAUSE' : 'PAUSE'; // 表示を変えないならここは好みで
   }
 
   // ---- プログレスバー更新 ----
@@ -623,7 +631,6 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     const ratio = video.currentTime / video.duration;
-    // CSS 側が transform: scaleX(0) 前提なので width ではなく transform を更新する
     progressBar.style.transform = `scaleX(${ratio})`;
   }
 
@@ -632,8 +639,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   video.addEventListener('play', () => {
     syncPlayButton();
-    // 再生開始時に一度バーを表示
-    showControls();
+    showControls(); // 再生開始時にいちど表示
   });
 
   video.addEventListener('pause', syncPlayButton);
@@ -693,9 +699,7 @@ document.addEventListener('DOMContentLoaded', () => {
         video.pause();
       }
       syncPlayButton();
-
-      // ボタンを触ったら 3秒見えるように
-      showControls();
+      showControls(); // ボタンを触ったら 3秒見えるように
     });
   }
 
@@ -718,14 +722,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ---- タッチ端末：動画エリアタップでコントロール表示 ----
   if (isTouchDevice && videoWrap) {
-    // 動画エリアをタップしたらコントロール表示
+    // 動画そのもののタップでも確実に拾う
+    video.addEventListener('click', (e) => {
+      e.stopPropagation();
+      showControls();
+    });
+
+    // ラッパー（動画の上下の余白）をタップしても表示
     videoWrap.addEventListener('click', (e) => {
-      e.stopPropagation(); // 背景クリック扱いで閉じないように
+      e.stopPropagation();
       showControls();
     });
 
     // コントロール上を触っている間はタイマーを止める
-    controls.addEventListener('pointerdown', () => {
+    controls.addEventListener('pointerdown', (e) => {
       if (hideControlsTimer) {
         clearTimeout(hideControlsTimer);
         hideControlsTimer = null;
@@ -733,10 +743,15 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // 指を離したら、また 3秒カウント
-    controls.addEventListener('pointerup', () => {
+    controls.addEventListener('pointerup', (e) => {
       showControls();
     });
   }
+
+  // 念のためボタン系は pointer-events を強制 ON
+  Array.from(controls.querySelectorAll('button')).forEach((btn) => {
+    btn.style.pointerEvents = 'auto';
+  });
 
   // 初期状態の同期
   syncPlayButton();

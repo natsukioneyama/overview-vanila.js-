@@ -184,7 +184,7 @@ body.jl-ready #grid {
   content: "";
   position: absolute;
   inset: 0;
-  background: rgba(253, 253, 65, 0.763);
+  background: rgba(255, 39, 39, 0.763);
   pointer-events: none;
   z-index: 1;
 }
@@ -520,6 +520,20 @@ body.jl-ready #grid {
   justify-content: center;
 
   z-index: 20;                /* ★ 追加：動画 & コントロールをヒットゾーンより上に */
+}
+
+.gm-video-wrap {
+  opacity: 0;
+  transition: opacity .35s ease;
+}
+
+.gm-video-wrap.is-ready {
+  opacity: 1;
+}
+@media (hover: none) and (pointer: coarse) {
+  .gm-video-wrap .sv-controls button {
+    pointer-events: auto;
+  }
 }
 
 
