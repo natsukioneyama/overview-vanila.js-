@@ -6,9 +6,9 @@
   function getRowHeight() {
     const w = window.innerWidth;
 
-    if (w <= 480) return 130;      // iPhone
-    if (w <= 768) return 140;      // タブレット小
-    if (w <= 1200) return 150;     // ラップトップ
+    if (w <= 480) return 150;      // iPhone
+    if (w <= 768) return 160;      // タブレット小
+    if (w <= 1200) return 170;     // ラップトップ
     return 180;                    // デスクトップ広め
   }
 
@@ -19,7 +19,7 @@
     if (w <= 480) return 10;   // 狭い画面は詰め気味
     if (w <= 768) return 9;    // タブレット
     if (w <= 1200) return 8;   // 中画面
-    return 12;                 // 大画面はゆったり
+    return 7;                 // 大画面はゆったり
   }
 
   // ==== アイテム情報 ====
