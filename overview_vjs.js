@@ -573,8 +573,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-
-
 // ==== gm video controls: progress + PLAY/FULL ====
 document.addEventListener('DOMContentLoaded', () => {
   const gm = document.getElementById('gm');
@@ -675,55 +673,46 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-
-
   // ---- タッチ端末判定 ----
-  const isTouch = matchMedia('(pointer: coarse)').matches;
+  const isTouch =
+    (window.matchMedia &&
+      window.matchMedia('(hover: none) and (pointer: coarse)').matches) ||
+    ('ontouchstart' in window) ||
+    (navigator.maxTouchPoints > 0);
 
-  // PC のときは is-visible を使わず、hover だけに任せる
+  // PC：is-visible は使わず、hover のみ
   if (!isTouch) {
     controls.classList.remove('is-visible');
-    return; // ここでこの関数（DOMContentLoaded 内）の残りを終了
+    return;
   }
 
-  // ここから下はタッチ端末専用（iPhone / Android）
+  // ここから iPhone / Android 用：表示されたら一定時間後にフェードアウト
   let hideControlsTimer = null;
 
-  function showControlsOnce() {
+  function showControlsFor(ms = 1500) {
     controls.classList.add('is-visible');
+
     if (hideControlsTimer) {
       clearTimeout(hideControlsTimer);
     }
+
     hideControlsTimer = setTimeout(() => {
       controls.classList.remove('is-visible');
       hideControlsTimer = null;
-    }, 1000); // 表示時間は 1000ms（1秒） 好みで調整OK
+    }, ms);
   }
 
-  // ----- タッチ端末だけ：動画本体をタップで表示 -----
+  // 動画が再生された瞬間に一度だけ表示 → 1.5 秒後に自動で消える
+  video.addEventListener('play', () => {
+    showControlsFor(1500);
+  });
+
+  // 動画本体をタップしたときに再度表示 → また 1.5 秒後に自動で消える
   const handleTap = (e) => {
     e.stopPropagation();
-    showControlsOnce();
+    showControlsFor(1500);
   };
 
-  // ★ 動画本体だけをタップターゲットにする
   video.addEventListener('pointerdown', handleTap);
   video.addEventListener('touchstart', handleTap, { passive: true });
-
-  // コントロール上で触っている間はフェードアウト停止
-  controls.addEventListener('pointerdown', () => {
-    if (hideControlsTimer) {
-      clearTimeout(hideControlsTimer);
-      hideControlsTimer = null;
-    }
-  });
-
-  controls.addEventListener('pointerup', () => {
-    showControlsOnce();
-  });
-
-  // 再生開始時に一度表示
-  video.addEventListener('play', () => {
-    showControlsOnce();
-  });
-}); // ← document.addEventListener('DOMContentLoaded', () => { の閉じカッコ
+});
