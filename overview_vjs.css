@@ -161,7 +161,7 @@ body.jl-ready #grid {
     content: "";
     position: absolute;
     inset: 0;
-    background: rgba(255, 255, 255, 0.54);
+    background: rgba(255, 255, 255, 0.763);
     pointer-events: none;
     z-index: 1;
   }
@@ -174,29 +174,27 @@ body.jl-ready #grid {
 }
 
 /* モバイル: 1回タップでキャプション表示、グループをハイライト */
-@media (hover: none) and (pointer: coarse) {
 
-  /* 1回目タップで付く .tap-armed のときだけキャプション表示 */
   #grid .jl-item.tap-armed .ov-cap {
-    opacity: 1;
-  }
-
-  /* is-in-group が付いたサムネだけ半透明オーバーレイ */
-  #grid.is-group-tap .jl-item.is-in-group::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: rgba(255, 255, 255, 0.54);
-    pointer-events: none;
-    z-index: 1;
-  }
-
-  /* キャプションは常にオーバーレイより前 */
-  #grid .ov-cap {
-    position: absolute;
-    z-index: 2;
-  }
+  opacity: 1;
 }
+
+/* is-in-group が付いたサムネだけ半透明オーバーレイ */
+#grid.is-group-tap .jl-item.is-in-group::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.54);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* キャプションは常にオーバーレイより前 */
+#grid .ov-cap {
+  position: absolute;
+  z-index: 2;
+}
+
 
 
 
