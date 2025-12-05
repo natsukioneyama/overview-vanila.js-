@@ -227,7 +227,6 @@ body.jl-ready #grid {
   position: relative;
   width: 98vw;
 
-  /* ★ ここがポイント：100vh からフッター分を引く */
   height: calc(100vh - var(--gm-footer-h));
 
   padding: 0;

@@ -348,39 +348,62 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // スワイプ操作（スマホ用：左右スワイプで前後）
+    // スワイプ操作（スマホ用：左右スワイプで前後）
   let touchStartX = 0;
   let touchStartY = 0;
+  let touchOnControls = false; // ★ 動画コントロール上のタッチかどうか
 
-  // 開いているときだけ、gm 全体でスワイプを検知
   gm.addEventListener('touchstart', (e) => {
     if (gm.getAttribute('aria-hidden') === 'true') return;
+
     const t = e.touches[0];
+    if (!t) return;
+
+    // ★ 追加：動画コントロールや動画ラッパー上ならスワイプ無効
+    const target = e.target;
+    if (
+      target.closest('.gm-video-wrap') || // 動画エリア全体
+      target.closest('.sv-controls')      // カスタムコントロール
+    ) {
+      touchOnControls = true;
+      return;
+    }
+
+    touchOnControls = false;
     touchStartX = t.clientX;
     touchStartY = t.clientY;
   }, { passive: true });
 
   gm.addEventListener('touchend', (e) => {
     if (gm.getAttribute('aria-hidden') === 'true') return;
+
+    // ★ コントロール上で始まったタッチはここで終了
+    if (touchOnControls) {
+      touchOnControls = false;
+      return;
+    }
+
     const t = e.changedTouches[0];
+    if (!t) return;
+
     const dx = t.clientX - touchStartX;
     const dy = t.clientY - touchStartY;
 
     const minDist = 50;  // 必要な横方向移動量（px）
-    const maxVert = 40;  // 縦方向ブレはこの範囲まで許容
+    const maxVert = 40;  // 縦方向ブレ許容量
 
-    // 横方向に一定以上スワイプ＋縦ブレ少なめ → ページ送り
     if (Math.abs(dx) > minDist && Math.abs(dy) < maxVert) {
       e.preventDefault();
       if (dx < 0) {
-        // 左にスワイプ → 次の画像 / 動画
+        // 左にスワイプ → 次
         openAt(currentIndex + 1);
       } else {
-        // 右にスワイプ → 前の画像 / 動画
+        // 右にスワイプ → 前
         openAt(currentIndex - 1);
       }
     }
   }, { passive: false });
+
 });
 
 
