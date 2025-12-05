@@ -412,27 +412,301 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+// ==== Simple Viewer: open (画像 or 動画 or HTML snippet) ====
+(function () {
+  const sv = document.getElementById('simple-viewer');
+  if (!sv) return;
+
+  const svImg  = sv.querySelector('.simple-viewer__img');
+  const svText = sv.querySelector('.simple-viewer__text');
+
+  const svVideoWrap = sv.querySelector('.sv-video');
+  const svVideoTag  = sv.querySelector('.sv-video__tag');
+  const svControls  = sv.querySelector('.sv-video__controls');
+  const svProgTrack = svControls ? svControls.querySelector('.sv-progress') : null;
+  const svProgBar   = svControls ? svControls.querySelector('.sv-progress__bar') : null;
+  const svPlayBtn   = svControls ? svControls.querySelector('.sv-btn--play') : null;
+  const svFsBtn     = svControls ? svControls.querySelector('.sv-btn--fs') : null;
+
+  // ==== プログレス関連 ====
+  let isSeeking        = false;
+  let hideControlsTimer = null;
+
+  function resetControls() {
+    if (svProgBar) {
+      svProgBar.style.width = '0%';
+    }
+    if (svPlayBtn && svVideoTag) {
+      svPlayBtn.textContent = svVideoTag.paused ? 'PLAY' : 'PAUSE';
+    }
+    if (svControls) {
+      svControls.classList.remove('is-visible');
+    }
+    if (hideControlsTimer) {
+      clearTimeout(hideControlsTimer);
+      hideControlsTimer = null;
+    }
+  }
+
+  function updateProgress() {
+    if (!svVideoTag || !svProgBar) return;
+    if (!svVideoTag.duration || !isFinite(svVideoTag.duration)) {
+      svProgBar.style.width = '0%';
+      return;
+    }
+    const ratio = svVideoTag.currentTime / svVideoTag.duration;
+    svProgBar.style.width = `${ratio * 100}%`;
+  }
+
+  function seekFromClientX(clientX) {
+    if (!svProgTrack || !svVideoTag || !svVideoTag.duration) return;
+
+    const rect = svProgTrack.getBoundingClientRect();
+    if (!rect.width) return;
+
+    let ratio = (clientX - rect.left) / rect.width;
+    if (ratio < 0) ratio = 0;
+    if (ratio > 1) ratio = 1;
+
+    svVideoTag.currentTime = ratio * svVideoTag.duration;
+  }
+
+  // ==== プログレスバーでシーク ====
+  if (svProgTrack && svVideoTag) {
+    const onPointerMove = (e) => {
+      if (!isSeeking) return;
+      e.preventDefault();
+      seekFromClientX(e.clientX);
+    };
+
+    const onPointerUp = (e) => {
+      if (!isSeeking) return;
+      isSeeking = false;
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+    };
+
+    svProgTrack.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();    // 背景クリック扱いにしない
+      isSeeking = true;
+      seekFromClientX(e.clientX);
+
+      window.addEventListener('pointermove', onPointerMove);
+      window.addEventListener('pointerup', onPointerUp);
+    });
+  }
+
+  // ==== 再生 / 一時停止 ====
+  function syncPlayButton() {
+    if (!svPlayBtn || !svVideoTag) return;
+    svPlayBtn.textContent = svVideoTag.paused ? 'PLAY' : 'PAUSE';
+  }
+
+  if (svPlayBtn && svVideoTag) {
+    svPlayBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (svVideoTag.paused) {
+        svVideoTag.play().catch(() => {});
+      } else {
+        svVideoTag.pause();
+      }
+      syncPlayButton();
+    });
+  }
+
+  // ==== フルスクリーン ====
+  if (svFsBtn && svVideoTag) {
+    svFsBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (svVideoTag.requestFullscreen) {
+        svVideoTag.requestFullscreen();
+      } else if (svVideoTag.webkitEnterFullscreen) {
+        svVideoTag.webkitEnterFullscreen();
+      }
+    });
+  }
+
+  // 再生中は progress 更新 + ボタン表示同期
+  if (svVideoTag) {
+    svVideoTag.addEventListener('timeupdate', updateProgress);
+    svVideoTag.addEventListener('play', syncPlayButton);
+    svVideoTag.addEventListener('pause', syncPlayButton);
+  }
+
+  // ==== コントロール表示（iPhone 向け） ====
+  function showControls() {
+    if (!svControls) return;
+    svControls.classList.add('is-visible');
+
+    if (hideControlsTimer) clearTimeout(hideControlsTimer);
+    hideControlsTimer = setTimeout(() => {
+      svControls.classList.remove('is-visible');
+      hideControlsTimer = null;
+    }, 3000);
+  }
+
+  // 「タッチデバイスのみ」タップで表示
+  if (window.matchMedia('(hover: none) and (pointer: coarse)').matches) {
+    if (svVideoWrap) {
+      svVideoWrap.addEventListener('click', (e) => {
+        // まずコントロール表示（動画タップ）
+        showControls();
+      });
+    }
+
+    if (svControls) {
+      svControls.addEventListener('pointerdown', () => {
+        if (hideControlsTimer) clearTimeout(hideControlsTimer);
+      });
+      svControls.addEventListener('pointerup', () => {
+        showControls();
+      });
+    }
+  }
+
+  // ==== Simple Viewer アイコンから開く処理 ====
+  const svButtons = document.querySelectorAll('.icon[data-type="simple-view"]');
+
+  const openSimpleViewer = (btn, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const src = btn.dataset.src || '';
+    if (!src) return;
+
+    const isVideo = /\.(mp4|webm|mov)(\?.*)?$/i.test(src);
+    const isImage = /\.(webp|jpg|jpeg|png|gif|avif)(\?.*)?$/i.test(src);
+    const isHtml  = /\.html?(\?.*)?$/i.test(src);
+
+    sv.classList.add('open');
+
+    // 全ビューをリセット
+    if (svVideoWrap) {
+      svVideoWrap.style.display = 'none';
+    }
+    if (svImg) {
+      svImg.style.display = 'none';
+      svImg.removeAttribute('src');
+    }
+    if (svText) {
+      svText.style.display = 'none';
+      svText.innerHTML = '';
+    }
+
+    // 動画
+    if (isVideo && svVideoWrap && svVideoTag) {
+      svVideoWrap.style.display = 'inline-block';
+
+      // コントロール初期化
+      resetControls();
+
+      // 動画属性
+      svVideoTag.src        = src;
+      svVideoTag.loop       = true;
+      svVideoTag.muted      = true;
+      svVideoTag.playsInline = true;
+      svVideoTag.currentTime = 0;
+
+      // メタデータ読み込み後に縦横判定
+      svVideoTag.onloadedmetadata = () => {
+        const isPortrait = svVideoTag.videoHeight > svVideoTag.videoWidth;
+        svVideoWrap.classList.toggle('is-portrait',  isPortrait);
+        svVideoWrap.classList.toggle('is-landscape', !isPortrait);
+
+        updateProgress();
+        syncPlayButton();
+      };
+
+      svVideoTag.play().catch(() => {
+        // 自動再生がブロックされた場合もとりあえずボタン表示を合わせる
+        syncPlayButton();
+      });
+
+      return;
+    }
+
+    // 画像
+    if (isImage && svImg) {
+      svImg.style.display = 'block';
+      svImg.src = src;
+      return;
+    }
+
+    // HTML スニペット
+    if (isHtml && svText) {
+      fetch(src)
+        .then(r => r.text())
+        .then(html => {
+          svText.innerHTML = html;
+          svText.style.display = 'block';
+        })
+        .catch(() => {
+          svText.innerHTML = 'Failed to load.';
+          svText.style.display = 'block';
+        });
+    }
+  };
+
+  svButtons.forEach((btn) => {
+    // iPhone 対策：pointerdown で開く
+    btn.addEventListener('pointerdown', (e) => {
+      openSimpleViewer(btn, e);
+    });
+
+    // click はキャンセル専用（ダブル発火防止）
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    }, { passive: false });
+  });
+
+  // ==== 閉じる処理 ====
+  function closeSV() {
+    sv.classList.remove('open');
+
+    if (svVideoWrap && svVideoTag) {
+      try { svVideoTag.pause(); } catch (_) {}
+      svVideoTag.removeAttribute('src');
+      svVideoTag.load();
+    }
+
+    resetControls();
+  }
+
+  // 背景クリックで閉じる（sv 自体をクリックしたときだけ）
+  sv.addEventListener('click', (e) => {
+    if (e.target === sv) {
+      closeSV();
+    }
+  });
+
+  // ESC で閉じる
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeSV();
+  });
+
+})();
 
 
 
 
 
+// ==== gm video controls: progress + PLAY/FULL ====
+(function () {
+  const gm = document.querySelector('.gm');
+  if (!gm) return;
 
+  const videoWrap = gm.querySelector('.gm-video-wrap');
+  const video     = videoWrap ? videoWrap.querySelector('video') : null;
+  const controls  = gm.querySelector('.sv-controls');
 
-/* ========== Video custom UI (sv-controls) ========== */
-document.addEventListener('DOMContentLoaded', () => {
-  const gm    = document.getElementById('gm');
-  const video = document.getElementById('gmVideo');
-  const ctrls = gm ? gm.querySelector('.sv-controls') : null;
+  if (!video || !controls) return;
 
-  if (!gm || !video || !ctrls) return;
-
-  const progress = ctrls.querySelector('.sv-progress');
-  const bar      = ctrls.querySelector('.sv-progress__bar');
-  const btnPlay  = ctrls.querySelector('.sv-btn--play');
-  const btnFs    = ctrls.querySelector('.sv-btn--fs');
-
-
+  const progressTrack = controls.querySelector('.sv-progress');
+  const progressBar   = controls.querySelector('.sv-progress__bar');
+  const btnPlay       = controls.querySelector('.sv-btn--play');
+  const btnFs         = controls.querySelector('.sv-btn--fs');
 
   // ---- 再生ボタンの表示を同期 ----
   function syncPlayButton() {
@@ -440,121 +714,100 @@ document.addEventListener('DOMContentLoaded', () => {
     btnPlay.textContent = video.paused ? 'PLAY' : 'PAUSE';
   }
 
-    // ---- プログレス更新 ----
+  // ---- プログレスバー更新 ----
   function updateProgress() {
-    if (!video.duration || !isFinite(video.duration)) {
-      if (bar) bar.style.transform = 'scaleX(0)';
+    if (!progressBar || !video.duration || !isFinite(video.duration)) {
+      if (progressBar) {
+        progressBar.style.transform = 'scaleX(0)';
+      }
       return;
     }
     const ratio = video.currentTime / video.duration;
-    const clamped = Math.max(0, Math.min(1, ratio || 0));
-    if (bar) {
-      bar.style.transform = `scaleX(${clamped})`;
-    }
+    // CSS 側が transform: scaleX(0) 前提なので width ではなく transform を更新する
+    progressBar.style.transform = `scaleX(${ratio})`;
   }
 
-  video.addEventListener('timeupdate',       updateProgress);
-  video.addEventListener('loadedmetadata',   updateProgress);
-  video.addEventListener('play',  syncPlayButton);
+  video.addEventListener('timeupdate', updateProgress);
+  video.addEventListener('loadedmetadata', updateProgress);
+  video.addEventListener('play', syncPlayButton);
   video.addEventListener('pause', syncPlayButton);
 
-  // ---- 共通の seek 関数（マウス / タッチ / ペン用）----
-  function seekFromClientX(clientX) {
-    if (!progress || !video.duration || !isFinite(video.duration)) return;
+  // ---- プログレスバーでシーク（ドラッグ対応） ----
+  if (progressTrack) {
+    let isSeeking = false;
 
-    const rect = progress.getBoundingClientRect();
-    let ratio = (clientX - rect.left) / rect.width;
-    ratio = Math.max(0, Math.min(1, ratio));
+    const seekFromClientX = (clientX) => {
+      const rect = progressTrack.getBoundingClientRect();
+      if (!rect.width || !video.duration) return;
 
-    video.currentTime = ratio * video.duration;
-    updateProgress();
+      let ratio = (clientX - rect.left) / rect.width;
+      if (ratio < 0) ratio = 0;
+      if (ratio > 1) ratio = 1;
+
+      video.currentTime = ratio * video.duration;
+    };
+
+    const onPointerMove = (e) => {
+      if (!isSeeking) return;
+      e.preventDefault();
+      seekFromClientX(e.clientX);
+    };
+
+    const onPointerUp = (e) => {
+      if (!isSeeking) return;
+      isSeeking = false;
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+    };
+
+    progressTrack.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      e.stopPropagation(); // ナビボタンにクリックが伝わらないように
+
+      isSeeking = true;
+      seekFromClientX(e.clientX);
+
+      window.addEventListener('pointermove', onPointerMove);
+      window.addEventListener('pointerup', onPointerUp);
+    });
   }
 
-  let isScrubbing = false;
-
-  if (progress) {
-    // pointer 系でまとめて対応（PC / iPhone / iPad 共通）
-    progress.addEventListener('pointerdown', (e) => {
-      isScrubbing = true;
-      progress.setPointerCapture(e.pointerId);
-      seekFromClientX(e.clientX);
-    });
-
-    progress.addEventListener('pointermove', (e) => {
-      if (!isScrubbing) return;
-      seekFromClientX(e.clientX);
-    });
-
-    progress.addEventListener('pointerup', (e) => {
-      if (!isScrubbing) return;
-      isScrubbing = false;
-      progress.releasePointerCapture(e.pointerId);
-      syncPlayButton();
-    });
-
-    progress.addEventListener('pointercancel', () => {
-      isScrubbing = false;
-    });
-  }
-
-
-
-  // ---- 再生 / 一時停止 ----
+  // ---- PLAY / PAUSE ボタン ----
   if (btnPlay) {
-    btnPlay.addEventListener('click', (ev) => {
-      ev.stopPropagation();
+    btnPlay.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
       if (video.paused) {
         video.play().catch(() => {});
       } else {
         video.pause();
       }
+      syncPlayButton();
     });
   }
 
-  // ---- フルスクリーン ----
-    // ---- FULLSCREEN トグル ----
+  // ---- FULL ボタン ----
   if (btnFs) {
-    btnFs.addEventListener('click', () => {
-      if (!video) return;
+    btnFs.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
 
-      const doc = document;
-      const el  = video;
-
-      const isFs =
-        doc.fullscreenElement ||
-        doc.webkitFullscreenElement ||
-        el.webkitDisplayingFullscreen;
-
-      if (isFs) {
-        // すでにフルスクリーン → 抜ける
-        if (doc.exitFullscreen) {
-          doc.exitFullscreen();
-        } else if (doc.webkitExitFullscreen) {
-          doc.webkitExitFullscreen();
-        } else if (doc.mozCancelFullScreen) {
-          doc.mozCancelFullScreen();
-        } else if (doc.msExitFullscreen) {
-          doc.msExitFullscreen();
-        }
-      } else {
-        // これからフルスクリーンに入る
-        if (el.requestFullscreen) {
-          el.requestFullscreen();
-        } else if (el.webkitRequestFullscreen) {
-          el.webkitRequestFullscreen();
-        } else if (el.webkitEnterFullscreen) {
-          // iOS Safari 向け
-          el.webkitEnterFullscreen();
-        } else if (el.webkitEnterFullScreen) {
-          // 古い iOS Safari 向けの別名
-          el.webkitEnterFullScreen();
-        }
+      if (video.requestFullscreen) {
+        video.requestFullscreen();
+      } else if (video.webkitEnterFullscreen) {
+        // iPhone Safari 向け
+        video.webkitEnterFullscreen();
       }
     });
   }
 
-
-  // 初期状態の表示
+  // 初期状態の同期
   syncPlayButton();
   updateProgress();
-});
+})();
+
+
+
+
+

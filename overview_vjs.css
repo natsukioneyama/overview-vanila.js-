@@ -363,7 +363,10 @@ body.jl-ready #grid {
   border: 0;
   background: transparent;
   cursor: pointer;
+
+  z-index: 5;   /* ★ 追加：動画(z=20)より低くする */
 }
+
 
 .gm-prev { left: 0; }
 .gm-next { right: 0; }
@@ -418,20 +421,49 @@ body.jl-ready #grid {
 
 /* 動画のラッパー */
 .gm-video-wrap {
-  position: relative;
-  display: inline-flex;
-  flex-direction: column;
-  align-items: stretch;
+  position: relative;         /* sv-controls の基準 */
+  flex: 0 0 auto;
+  display: inline-flex;       /* ★ 幅 = 子要素（video）の幅 */
+  align-items: center;
+  justify-content: center;
+
+  z-index: 20;                /* ★ 追加：動画 & コントロールをヒットゾーンより上に */
 }
 
-/* コントロールは常に表示（テスト用） */
+
 .sv-controls {
-  margin-top: 8px;           /* 動画の下に少し余白 */
-  opacity: 1;
-  transform: translateY(0);
-  pointer-events: auto;
-  z-index: 20;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;            /* ← 動画の中 下寄せ */
+  padding: 12px 14px;
+  
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  opacity: 0;           /* ★ 追加：初期状態では非表示 */
+  pointer-events: none; /* 透明の間はクリック不可にする */
+  transition: opacity .25s ease;
+  z-index: 10;
+
+  background: linear-gradient(to top, rgba(0,0,0,0.35), rgba(0,0,0,0));
+  border-radius: 0 0 6px 6px;
 }
+
+
+/* PC：ホバーで表示 */
+.gm-video-wrap:hover .sv-controls {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* スマホ：タップで .show-controls クラスを付けて表示（JS が付ける） */
+.gm-video-wrap.show-controls .sv-controls {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 
 /* いまは is-visible は使わないが、将来用に残しておく */
 .sv-controls.is-visible {
