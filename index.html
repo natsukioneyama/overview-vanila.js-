@@ -8,6 +8,15 @@
   <link rel="stylesheet" href="./overview_vjs.css" />
   <script src="./justified-layout.umd.js" defer></script>
   <script src="./overview_vjs.js" defer></script>
+    <script>
+    (function () {
+      var ua = navigator.userAgent || navigator.vendor || window.opera;
+      // iPhone / iPad / iPod だけにフラグを付ける
+      if (/iPhone|iPad|iPod/i.test(ua)) {
+        document.documentElement.classList.add('is-ios');
+      }
+    })();
+  </script>
 </head>
 
 <body>
