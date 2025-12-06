@@ -739,14 +739,26 @@ document.addEventListener('DOMContentLoaded', () => {
       clearHideTimer();
       __ov_debug('scheduling hide in ' + AUTO_HIDE_MS + 'ms');
       hideControlsTimer = setTimeout(() => {
+        // remove class
         controls.classList.remove('is-visible');
+        // Force-hide via inline styles to override any stubborn CSS (:hover etc.)
+        try {
+          controls.style.opacity = '0';
+          controls.style.pointerEvents = 'none';
+        } catch (err) {}
         hideControlsTimer = null;
-        __ov_debug('controls hidden by timer');
+        __ov_debug('controls hidden by timer (force-inline)');
       }, AUTO_HIDE_MS);
     };
 
     const showControlsOnce = () => {
+      // clear any inline hide we forced earlier
+      try {
+        controls.style.opacity = '';
+        controls.style.pointerEvents = '';
+      } catch (err) {}
       controls.classList.add('is-visible');
+      __ov_debug('cleared inline hide styles');
       scheduleHide();
     };
 
@@ -795,6 +807,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const suspendAutoHide = (e) => {
       e.stopPropagation();
       clearHideTimer();
+      // ensure visible while interacting
+      try {
+        controls.style.opacity = '';
+        controls.style.pointerEvents = '';
+      } catch (err) {}
       controls.classList.add('is-visible');
       __ov_debug('suspendAutoHide (pointerdown/touchstart)');
     };
