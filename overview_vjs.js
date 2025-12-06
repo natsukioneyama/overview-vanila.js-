@@ -684,19 +684,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (isTouch) {
     // ★ iPhone / Android 用：動画をタップしたらフェード表示（トグル）
-    const handleTap = (e) => {
+    // touchstart で判定してフラグを立て、click では無視する
+    let isTouchEvent = false;
+
+    const handleTouchStart = (e) => {
+      isTouchEvent = true;
       e.stopPropagation();
-      // is-visible を付けたり消したりするだけ
+      controls.classList.toggle('is-visible');
+    };
+
+    const handleClick = (e) => {
+      // touchstart から来た click なら無視
+      if (isTouchEvent) {
+        isTouchEvent = false;
+        return;
+      }
+      e.stopPropagation();
       controls.classList.toggle('is-visible');
     };
 
     // 動画本体をタップ
-    video.addEventListener('click', handleTap);
-    video.addEventListener('touchstart', handleTap, { passive: true });
+    video.addEventListener('touchstart', handleTouchStart, { passive: true });
+    video.addEventListener('click', handleClick);
     
     // ★ ラッパー領域（コントロール含む）もタップ受け付ける
-    videoWrap.addEventListener('click', handleTap);
-    videoWrap.addEventListener('touchstart', handleTap, { passive: true });
+    videoWrap.addEventListener('touchstart', handleTouchStart, { passive: true });
+    videoWrap.addEventListener('click', handleClick);
 
   } else {
     // ★ PC：is-visible は使わず、hover だけに任せる
