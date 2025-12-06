@@ -725,8 +725,21 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     };
 
-    // 動画本体だけをタップ対象に（click のみ使用）
-    video.addEventListener('click', handleVideoTap);
+    // 動画本体だけをタップ対象に（touchend と click の両対応）
+    // touchend が発生した直後の click を無視するためのタイムスタンプ
+    let lastTouchTime = 0;
+
+    const handleVideoTouchEnd = (e) => {
+      lastTouchTime = Date.now();
+      handleVideoTap(e);
+    };
+
+    video.addEventListener('touchend', handleVideoTouchEnd, { passive: true });
+    video.addEventListener('click', (e) => {
+      // 直近に touchend があれば click を無視
+      if (Date.now() - lastTouchTime < 700) return;
+      handleVideoTap(e);
+    });
 
     // コントロール領域で操作中は自動非表示を止める
     const suspendAutoHide = (e) => {
