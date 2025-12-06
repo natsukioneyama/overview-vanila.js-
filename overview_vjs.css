@@ -184,7 +184,7 @@ body.jl-ready #grid {
   content: "";
   position: absolute;
   inset: 0;
-  background: rgb(255, 255, 255);
+  background: rgb(255, 0, 0);
   pointer-events: none;
   z-index: 1;
 }
@@ -522,9 +522,7 @@ body.jl-ready #grid {
   z-index: 20;
   opacity: 0;
   transition: opacity .35s ease;
-
-    pointer-events: none;
-
+  pointer-events: auto;       /* ★ タップを受け付ける */
 }
 
 .gm-video-wrap.is-ready {

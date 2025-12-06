@@ -557,6 +557,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (Math.abs(dx) > minDist && Math.abs(dy) < maxVert) {
       e.preventDefault();
+      // ★ スワイプ中はコントロールを非表示
+      controls.classList.remove('is-visible');
       if (dx < 0) {
         // 左にスワイプ → 次
         openAt(currentIndex + 1);
@@ -688,9 +690,13 @@ document.addEventListener('DOMContentLoaded', () => {
       controls.classList.toggle('is-visible');
     };
 
-    // 動画本体だけをタップターゲットにする
+    // 動画本体をタップ
     video.addEventListener('click', handleTap);
     video.addEventListener('touchstart', handleTap, { passive: true });
+    
+    // ★ ラッパー領域（コントロール含む）もタップ受け付ける
+    videoWrap.addEventListener('click', handleTap);
+    videoWrap.addEventListener('touchstart', handleTap, { passive: true });
 
   } else {
     // ★ PC：is-visible は使わず、hover だけに任せる
