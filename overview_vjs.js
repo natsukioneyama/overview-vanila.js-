@@ -586,44 +586,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (!videoWrap || !video || !controls) return;
 
-  // --- on-page debug overlay (for iPhone without remote inspector) ---
-  function __ov_createDebug() {
-    if (document.getElementById('ov-debug')) return;
-    const box = document.createElement('div');
-    box.id = 'ov-debug';
-    box.style.position = 'fixed';
-    box.style.left = '8px';
-    box.style.top = '8px';
-    box.style.zIndex = '99999';
-    box.style.padding = '6px 8px';
-    box.style.background = 'rgba(0,0,0,0.6)';
-    box.style.color = '#fff';
-    box.style.fontSize = '12px';
-    box.style.lineHeight = '1.2';
-    box.style.maxWidth = '60vw';
-    box.style.maxHeight = '40vh';
-    box.style.overflow = 'auto';
-    box.style.borderRadius = '6px';
-    box.style.pointerEvents = 'none';
-    document.body.appendChild(box);
-  }
-
-  function __ov_debug(msg) {
-    try {
-      __ov_createDebug();
-      const box = document.getElementById('ov-debug');
-      const time = new Date().toLocaleTimeString();
-      const line = document.createElement('div');
-      line.textContent = `${time} - ${msg}`;
-      box.appendChild(line);
-      // keep last 30 lines
-      while (box.childNodes.length > 30) box.removeChild(box.firstChild);
-    } catch (err) {
-      // ignore
-    }
-    // also output to console for desktop inspectors
-    console.log('[OVDBG]', msg);
-  }
+  
 
   const progTrack = controls.querySelector('.sv-progress');
   const progBar   = controls.querySelector('.sv-progress__bar');
@@ -731,13 +694,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (hideControlsTimer) {
         clearTimeout(hideControlsTimer);
         hideControlsTimer = null;
-        __ov_debug('hide timer cleared');
       }
     };
 
     const scheduleHide = () => {
       clearHideTimer();
-      __ov_debug('scheduling hide in ' + AUTO_HIDE_MS + 'ms');
       hideControlsTimer = setTimeout(() => {
         // remove class
         controls.classList.remove('is-visible');
@@ -747,7 +708,7 @@ document.addEventListener('DOMContentLoaded', () => {
           controls.style.pointerEvents = 'none';
         } catch (err) {}
         hideControlsTimer = null;
-        __ov_debug('controls hidden by timer (force-inline)');
+        // hidden by timer
       }, AUTO_HIDE_MS);
     };
 
@@ -758,14 +719,12 @@ document.addEventListener('DOMContentLoaded', () => {
         controls.style.pointerEvents = '';
       } catch (err) {}
       controls.classList.add('is-visible');
-      __ov_debug('cleared inline hide styles');
       scheduleHide();
     };
 
     const handleVideoTap = (e) => {
       // ターゲットがボタンやコントロール領域ならトグルしない
       if (e.target.closest('.sv-controls') || e.target.closest('.sv-btn')) {
-        __ov_debug('tap inside controls/button — ignored');
         return;
       }
       e.stopPropagation();
@@ -774,11 +733,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // 既に表示中なら即時非表示（タイマークリア）
         clearHideTimer();
         controls.classList.remove('is-visible');
-        __ov_debug('controls hidden by tap');
       } else {
         // 表示して自動で隠す
         showControlsOnce();
-        __ov_debug('controls shown by tap');
+        
       }
     };
 
@@ -788,7 +746,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const handleVideoTouchEnd = (e) => {
       lastTouchTime = Date.now();
-      __ov_debug('touchend on video');
       handleVideoTap(e);
     };
 
@@ -796,10 +753,8 @@ document.addEventListener('DOMContentLoaded', () => {
     video.addEventListener('click', (e) => {
       // 直近に touchend があれば click を無視
       if (Date.now() - lastTouchTime < 700) {
-        __ov_debug('click ignored due to recent touch');
         return;
       }
-      __ov_debug('click on video');
       handleVideoTap(e);
     });
 
@@ -813,14 +768,12 @@ document.addEventListener('DOMContentLoaded', () => {
         controls.style.pointerEvents = '';
       } catch (err) {}
       controls.classList.add('is-visible');
-      __ov_debug('suspendAutoHide (pointerdown/touchstart)');
     };
 
     const resumeAutoHide = (e) => {
       e.stopPropagation();
       // 少しだけ遅らせて自動非表示を再スケジュール
       scheduleHide();
-      __ov_debug('resumeAutoHide (pointerup/touchend)');
     };
 
     // pointer イベントが使える環境では pointerdown/up を使う
