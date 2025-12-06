@@ -684,18 +684,69 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (isTouch) {
     // ★ iPhone / Android 用：動画そのものをタップしたらフェード表示（トグル）
-    // コントロールやボタンをタップしたら無視する
+    // 表示されたら自動で 2 秒後に非表示にする。コントロール上で操作中はタイマーを止める。
+    const AUTO_HIDE_MS = 2000;
+    let hideControlsTimer = null;
+
+    const clearHideTimer = () => {
+      if (hideControlsTimer) {
+        clearTimeout(hideControlsTimer);
+        hideControlsTimer = null;
+      }
+    };
+
+    const scheduleHide = () => {
+      clearHideTimer();
+      hideControlsTimer = setTimeout(() => {
+        controls.classList.remove('is-visible');
+        hideControlsTimer = null;
+      }, AUTO_HIDE_MS);
+    };
+
+    const showControlsOnce = () => {
+      controls.classList.add('is-visible');
+      scheduleHide();
+    };
+
     const handleVideoTap = (e) => {
       // ターゲットがボタンやコントロール領域ならトグルしない
       if (e.target.closest('.sv-controls') || e.target.closest('.sv-btn')) {
         return;
       }
       e.stopPropagation();
-      controls.classList.toggle('is-visible');
+
+      if (controls.classList.contains('is-visible')) {
+        // 既に表示中なら即時非表示（タイマークリア）
+        clearHideTimer();
+        controls.classList.remove('is-visible');
+      } else {
+        // 表示して自動で隠す
+        showControlsOnce();
+      }
     };
 
     // 動画本体だけをタップ対象に（click のみ使用）
     video.addEventListener('click', handleVideoTap);
+
+    // コントロール領域で操作中は自動非表示を止める
+    const suspendAutoHide = (e) => {
+      e.stopPropagation();
+      clearHideTimer();
+      controls.classList.add('is-visible');
+    };
+
+    const resumeAutoHide = (e) => {
+      e.stopPropagation();
+      // 少しだけ遅らせて自動非表示を再スケジュール
+      scheduleHide();
+    };
+
+    // pointer イベントが使える環境では pointerdown/up を使う
+    controls.addEventListener('pointerdown', suspendAutoHide);
+    controls.addEventListener('pointerup', resumeAutoHide);
+    // 互換のため touch イベントも追加
+    controls.addEventListener('touchstart', suspendAutoHide, { passive: true });
+    controls.addEventListener('touchend', resumeAutoHide);
 
   } else {
     // ★ PC：is-visible は使わず、hover だけに任せる
